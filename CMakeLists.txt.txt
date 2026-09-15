@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.25)
+project(harimart CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Drogon CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(libpqxx CONFIG REQUIRED)
+find_package(sqlite3 CONFIG REQUIRED)
+find_package(unofficial-sodium CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
+
+add_executable(harimart src/main.cpp)
+
+target_link_libraries(harimart PRIVATE 
+    Drogon::Drogon 
+    nlohmann_json::nlohmann_json 
+    libpqxx::libpqxx 
+    sqlite3::sqlite3 
+    unofficial::sodium::sodium 
+    spdlog::spdlog
+)

@@ -1,0 +1,12 @@
+{
+  "name": "harimart",
+  "version": "0.1.0",
+  "dependencies": [
+    "drogon",
+    "sqlite3",
+    "libpqxx",
+    "nlohmann-json",
+    "libsodium",
+    "spdlog"
+  ]
+}
