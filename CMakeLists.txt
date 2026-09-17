@@ -12,7 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(Drogon CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
-find_package(libsodium CONFIG REQUIRED)
+find_package(unofficial-sodium CONFIG REQUIRED)
 
 file(GLOB_RECURSE SOURCES
     "${CMAKE_SOURCE_DIR}/src/*.cpp"
@@ -30,7 +30,7 @@ target_link_libraries(HariMart
         Drogon::Drogon
         nlohmann_json::nlohmann_json
         spdlog::spdlog
-        sodium
+        unofficial-sodium::sodium
 )
 
 if(MSVC)
