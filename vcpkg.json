@@ -1,12 +1,17 @@
 {
-  "name": "harimart",
-  "version-string": "0.1.0",
-  "dependencies": [
-    "drogon",
-    "nlohmann-json",
-    "spdlog",
-    "libsodium",
-    "libpqxx",
-    "gtest"
-  ]
+    "name": "harimart",
+    "version-string": "0.1.0",
+    "dependencies": [
+        {
+            "name": "drogon",
+            "features": [
+                "postgres"
+            ]
+        },
+        "nlohmann-json",
+        "spdlog",
+        "libsodium",
+        "libpqxx",
+        "gtest"
+    ]
 }
