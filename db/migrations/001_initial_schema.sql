@@ -119,3 +119,4 @@ CREATE INDEX idx_reviews_product_id
 
 CREATE INDEX idx_reviews_user_id
     ON reviews(user_id);
+
