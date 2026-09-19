@@ -62,8 +62,9 @@ std::vector<CartItem> CartRepository::getCartItems(
     auto dbClient = Database::getClient();
 
     auto result = dbClient->execSqlSync(
-        "SELECT id, user_id, product_id, quantity "
-        "FROM cart_items "
+        "SELECT c.id, c.user_id, c.product_id, c.quantity, p.price_cents "
+"FROM cart_items c "
+"JOIN products p ON c.product_id = p.id "
         "WHERE user_id = $1 "
         "ORDER BY id",
         userId
@@ -79,6 +80,7 @@ std::vector<CartItem> CartRepository::getCartItems(
         item.userId = row["user_id"].as<long long>();
         item.productId = row["product_id"].as<long long>();
         item.quantity = row["quantity"].as<int>();
+        item.priceCents = row["price_cents"].as<long long>();
 
         items.push_back(item);
     }

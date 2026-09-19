@@ -96,6 +96,7 @@ void CartController::getCart(
     auto items = service.getCart(userId);
 
     Json::Value itemsJson(Json::arrayValue);
+    long long totalCents = 0;
 
     for (const auto& item : items)
     {
@@ -104,6 +105,8 @@ void CartController::getCart(
         itemJson["userId"] = Json::Int64(item.userId);
         itemJson["productId"] = Json::Int64(item.productId);
         itemJson["quantity"] = item.quantity;
+        itemJson["priceCents"] = Json::Int64(item.priceCents);
+        totalCents += item.priceCents * item.quantity;
 
         itemsJson.append(itemJson);
     }
@@ -112,6 +115,8 @@ void CartController::getCart(
     responseJson["success"] = true;
     responseJson["error"] = Json::nullValue;
     responseJson["data"]["items"] = itemsJson;
+    responseJson["data"]["totalCents"] = Json::Int64(totalCents);
+    
 
     auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
     response->setStatusCode(drogon::k200OK);

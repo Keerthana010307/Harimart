@@ -6,4 +6,5 @@ struct CartItem
     long long userId;
     long long productId;
     int quantity;
+    long long priceCents;
 };
