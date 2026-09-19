@@ -23,9 +23,15 @@ public:
     std::vector<Order> getOrdersByBuyer(
         long long buyerId
     );
+
+    std::vector<Order> getOrdersBySeller(
+        long long sellerId
+    );
+
     bool updateOrderStatus(
-    long long orderId,
-    const std::string& status
-);
+        long long orderId,
+        const std::string& status
+    );
+
     bool confirmOrder(long long orderId);
 };

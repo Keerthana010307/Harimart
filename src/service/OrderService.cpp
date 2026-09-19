@@ -76,3 +76,39 @@ bool OrderService::confirmOrder(long long orderId)
         "CONFIRMED"
     );
 }
+std::vector<Order> OrderService::getOrdersBySeller(
+    long long sellerId)
+{
+    if (sellerId <= 0)
+    {
+        return {};
+    }
+
+    OrderRepository repository;
+
+    return repository.getOrdersBySeller(sellerId);
+}
+bool OrderService::updateOrderStatus(
+    long long orderId,
+    const std::string& status)
+{
+    if (orderId <= 0 || status.empty())
+    {
+        return false;
+    }
+
+    if (status != "CONFIRMED" &&
+        status != "SHIPPED" &&
+        status != "DELIVERED" &&
+        status != "CANCELLED")
+    {
+        return false;
+    }
+
+    OrderRepository repository;
+
+    return repository.updateOrderStatus(
+        orderId,
+        status
+    );
+}

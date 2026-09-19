@@ -85,3 +85,36 @@ bool OrderRepository::updateOrderStatus(
 
     return result.affectedRows() > 0;
 }
+std::vector<Order> OrderRepository::getOrdersBySeller(
+    long long sellerId)
+{
+    auto dbClient = Database::getClient();
+
+    auto result = dbClient->execSqlSync(
+        "SELECT DISTINCT o.id, o.buyer_id, o.status, "
+        "o.total_amount_cents "
+        "FROM orders o "
+        "JOIN order_items oi ON o.id = oi.order_id "
+        "JOIN products p ON oi.product_id = p.id "
+        "WHERE p.seller_id = $1 "
+        "ORDER BY o.id DESC",
+        sellerId
+    );
+
+    std::vector<Order> orders;
+
+    for (const auto& row : result)
+    {
+        Order order;
+
+        order.id = row["id"].as<long long>();
+        order.buyerId = row["buyer_id"].as<long long>();
+        order.status = row["status"].as<std::string>();
+        order.totalAmountCents =
+            row["total_amount_cents"].as<long long>();
+
+        orders.push_back(order);
+    }
+
+    return orders;
+}
