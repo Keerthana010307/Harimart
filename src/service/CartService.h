@@ -22,6 +22,7 @@ public:
         long long userId,
         long long productId
     );
+    bool clearCart(long long userId);
 
     std::vector<CartItem> getCart(
         long long userId

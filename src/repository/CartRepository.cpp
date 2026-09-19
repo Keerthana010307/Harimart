@@ -87,3 +87,15 @@ std::vector<CartItem> CartRepository::getCartItems(
 
     return items;
 }
+bool CartRepository::clearCart(long long userId)
+{
+    auto dbClient = Database::getClient();
+
+    auto result = dbClient->execSqlSync(
+        "DELETE FROM cart_items "
+        "WHERE user_id = $1",
+        userId
+    );
+
+    return result.affectedRows() > 0;
+}

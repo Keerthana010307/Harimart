@@ -68,3 +68,14 @@ std::vector<CartItem> CartService::getCart(
 
     return repository.getCartItems(userId);
 }
+bool CartService::clearCart(long long userId)
+{
+    if (userId <= 0)
+    {
+        return false;
+    }
+
+    CartRepository repository;
+
+    return repository.clearCart(userId);
+}

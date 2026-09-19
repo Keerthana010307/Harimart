@@ -1,5 +1,6 @@
 #include "OrderController.h"
 #include "../service/OrderService.h"
+#include "../repository/CartRepository.h"
 
 void OrderController::createOrder(
     const drogon::HttpRequestPtr& req,
@@ -130,6 +131,18 @@ void OrderController::confirmOrder(
     OrderService service;
 
     bool success = service.confirmOrder(orderId);
+    if (success)
+{
+    auto userIdParam = req->getParameter("userId");
+
+    if (!userIdParam.empty())
+    {
+        long long userId = std::stoll(userIdParam);
+
+        CartRepository cartRepository;
+        cartRepository.clearCart(userId);
+    }
+}
 
     Json::Value responseJson;
 
