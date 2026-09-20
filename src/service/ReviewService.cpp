@@ -1,5 +1,6 @@
 #include "ReviewService.h"
 #include "../repository/ReviewRepository.h"
+#include "../repository/OrderRepository.h"
 
 bool ReviewService::addReview(
     long long productId,
@@ -8,6 +9,13 @@ bool ReviewService::addReview(
     const std::string& comment)
 {
     if (rating < 1 || rating > 5)
+    {
+        return false;
+    }
+
+    OrderRepository orderRepository;
+
+    if (!orderRepository.hasCompletedPurchase(userId, productId))
     {
         return false;
     }

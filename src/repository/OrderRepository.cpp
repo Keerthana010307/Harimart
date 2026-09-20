@@ -118,3 +118,22 @@ std::vector<Order> OrderRepository::getOrdersBySeller(
 
     return orders;
 }
+bool OrderRepository::hasCompletedPurchase(
+    long long buyerId,
+    long long productId)
+{
+    auto dbClient = Database::getClient();
+
+    auto result = dbClient->execSqlSync(
+        "SELECT COUNT(*) AS count "
+        "FROM orders o "
+        "JOIN order_items oi ON o.id = oi.order_id "
+        "WHERE o.buyer_id = $1 "
+        "AND oi.product_id = $2 "
+        "AND o.status = 'DELIVERED'",
+        buyerId,
+        productId
+    );
+
+    return result[0]["count"].as<long long>() > 0;
+}

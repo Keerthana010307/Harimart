@@ -34,4 +34,10 @@ public:
     );
 
     bool confirmOrder(long long orderId);
+        
+
+    bool hasCompletedPurchase(
+        long long buyerId,
+        long long productId
+    );
 };
