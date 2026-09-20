@@ -20,4 +20,5 @@ public:
     std::optional<std::string> findRoleByEmail(
         const std::string& email
     );
+    std::optional<long long> findUserIdByEmail(const std::string& email);
 };

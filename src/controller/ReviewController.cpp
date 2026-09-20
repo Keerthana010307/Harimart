@@ -1,5 +1,6 @@
 #include "ReviewController.h"
 #include "../service/ReviewService.h"
+#include "../repository/UserRepository.h"
 
 void ReviewController::addReview(
     const drogon::HttpRequestPtr& req,
@@ -23,9 +24,8 @@ void ReviewController::addReview(
         return;
     }
 
-    if (!json->isMember("productId") ||
-        !json->isMember("userId") ||
-        !json->isMember("rating"))
+ if (!json->isMember("productId") ||
+    !json->isMember("rating"))
     {
         responseJson["success"] = false;
         responseJson["data"] = Json::nullValue;
@@ -41,7 +41,44 @@ void ReviewController::addReview(
     }
 
     long long productId = (*json)["productId"].asInt64();
-    long long userId = (*json)["userId"].asInt64();
+        if (!req->session()->find("user_email"))
+{
+    Json::Value responseJson;
+    responseJson["success"] = false;
+    responseJson["data"] = Json::nullValue;
+    responseJson["error"]["message"] = "Login required";
+
+    auto response =
+        drogon::HttpResponse::newHttpJsonResponse(responseJson);
+
+    response->setStatusCode(drogon::k401Unauthorized);
+    callback(response);
+    return;
+}
+
+std::string email =
+    req->session()->get<std::string>("user_email");
+    UserRepository userRepository;
+
+auto userIdOptional =
+    userRepository.findUserIdByEmail(email);
+
+if (!userIdOptional.has_value())
+{
+    Json::Value responseJson;
+    responseJson["success"] = false;
+    responseJson["data"] = Json::nullValue;
+    responseJson["error"]["message"] = "User not found";
+
+    auto response =
+        drogon::HttpResponse::newHttpJsonResponse(responseJson);
+
+    response->setStatusCode(drogon::k401Unauthorized);
+    callback(response);
+    return;
+}
+
+long long userId = userIdOptional.value();
     int rating = (*json)["rating"].asInt();
 
     std::string comment = "";

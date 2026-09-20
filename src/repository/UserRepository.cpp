@@ -39,6 +39,23 @@ std::optional<std::string> UserRepository::findPasswordHashByEmail(
 
     return result[0]["password_hash"].as<std::string>();
 }
+std::optional<long long> UserRepository::findUserIdByEmail(
+    const std::string& email)
+{
+    auto dbClient = Database::getClient();
+
+    auto result = dbClient->execSqlSync(
+        "SELECT id FROM users WHERE email = $1",
+        email
+    );
+
+    if (result.empty())
+    {
+        return std::nullopt;
+    }
+
+    return result[0]["id"].as<long long>();
+}
 
 std::optional<std::string> UserRepository::findRoleByEmail(
     const std::string& email)
