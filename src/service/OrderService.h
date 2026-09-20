@@ -17,6 +17,10 @@ public:
     );
 
     bool confirmOrder(long long orderId);
+    bool isOrderOwnedByBuyer(
+    long long orderId,
+    long long buyerId
+);
     bool updateOrderStatus(
     long long orderId,
     const std::string& status

@@ -1,30 +1,53 @@
 #include "OrderController.h"
 #include "../service/OrderService.h"
+#include "../repository/UserRepository.h"
 #include "../repository/CartRepository.h"
 
 void OrderController::createOrder(
     const drogon::HttpRequestPtr& req,
     std::function<void(const drogon::HttpResponsePtr&)>&& callback)
 {
-    auto userIdParam = req->getParameter("userId");
 
-    if (userIdParam.empty())
-    {
-        Json::Value responseJson;
-        responseJson["success"] = false;
-        responseJson["data"] = Json::nullValue;
-        responseJson["error"]["message"] =
-            "userId is required";
+if (!req->session()->find("user_email"))
+{
+    Json::Value responseJson;
+    responseJson["success"] = false;
+    responseJson["data"] = Json::nullValue;
+    responseJson["error"]["message"] = "Login required";
 
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
+    auto response =
+        drogon::HttpResponse::newHttpJsonResponse(responseJson);
 
-        response->setStatusCode(drogon::k400BadRequest);
-        callback(response);
-        return;
-    }
+    response->setStatusCode(drogon::k401Unauthorized);
+    callback(response);
+    return;
+}
 
-    long long userId = std::stoll(userIdParam);
+std::string email =
+    req->session()->get<std::string>("user_email");
+
+UserRepository userRepository;
+
+auto userIdOptional =
+    userRepository.findUserIdByEmail(email);
+
+if (!userIdOptional.has_value())
+{
+    Json::Value responseJson;
+    responseJson["success"] = false;
+    responseJson["data"] = Json::nullValue;
+    responseJson["error"]["message"] = "User not found";
+
+    auto response =
+        drogon::HttpResponse::newHttpJsonResponse(responseJson);
+
+    response->setStatusCode(drogon::k401Unauthorized);
+    callback(response);
+    return;
+}
+
+long long userId = userIdOptional.value();
+    
 
     OrderService service;
 
@@ -62,29 +85,50 @@ void OrderController::createOrder(
     callback(response);
 }
 
+
 void OrderController::getOrders(
     const drogon::HttpRequestPtr& req,
     std::function<void(const drogon::HttpResponsePtr&)>&& callback)
 {
-    auto userIdParam = req->getParameter("userId");
-
-    if (userIdParam.empty())
+    if (!req->session()->find("user_email"))
     {
         Json::Value responseJson;
         responseJson["success"] = false;
         responseJson["data"] = Json::nullValue;
-        responseJson["error"]["message"] =
-            "userId is required";
+        responseJson["error"]["message"] = "Login required";
 
         auto response =
             drogon::HttpResponse::newHttpJsonResponse(responseJson);
 
-        response->setStatusCode(drogon::k400BadRequest);
+        response->setStatusCode(drogon::k401Unauthorized);
         callback(response);
         return;
     }
 
-    long long userId = std::stoll(userIdParam);
+    std::string email =
+        req->session()->get<std::string>("user_email");
+
+    UserRepository userRepository;
+
+    auto userIdOptional =
+        userRepository.findUserIdByEmail(email);
+
+    if (!userIdOptional.has_value())
+    {
+        Json::Value responseJson;
+        responseJson["success"] = false;
+        responseJson["data"] = Json::nullValue;
+        responseJson["error"]["message"] = "User not found";
+
+        auto response =
+            drogon::HttpResponse::newHttpJsonResponse(responseJson);
+
+        response->setStatusCode(drogon::k401Unauthorized);
+        callback(response);
+        return;
+    }
+
+    long long userId = userIdOptional.value();
 
     OrderService service;
 
@@ -123,26 +167,77 @@ void OrderController::getOrders(
     response->setStatusCode(drogon::k200OK);
     callback(response);
 }
+
+
 void OrderController::confirmOrder(
     const drogon::HttpRequestPtr& req,
     std::function<void(const drogon::HttpResponsePtr&)>&& callback,
     long long orderId)
 {
+    if (!req->session()->find("user_email"))
+    {
+        Json::Value responseJson;
+        responseJson["success"] = false;
+        responseJson["data"] = Json::nullValue;
+        responseJson["error"]["message"] = "Login required";
+
+        auto response =
+            drogon::HttpResponse::newHttpJsonResponse(responseJson);
+
+        response->setStatusCode(drogon::k401Unauthorized);
+        callback(response);
+        return;
+    }
+
+    std::string email =
+        req->session()->get<std::string>("user_email");
+
+    UserRepository userRepository;
+
+    auto userIdOptional =
+        userRepository.findUserIdByEmail(email);
+
+    if (!userIdOptional.has_value())
+    {
+        Json::Value responseJson;
+        responseJson["success"] = false;
+        responseJson["data"] = Json::nullValue;
+        responseJson["error"]["message"] = "User not found";
+
+        auto response =
+            drogon::HttpResponse::newHttpJsonResponse(responseJson);
+
+        response->setStatusCode(drogon::k401Unauthorized);
+        callback(response);
+        return;
+    }
+
+    long long userId = userIdOptional.value();
+
     OrderService service;
+    if (!service.isOrderOwnedByBuyer(orderId, userId))
+{
+    Json::Value responseJson;
+    responseJson["success"] = false;
+    responseJson["data"] = Json::nullValue;
+    responseJson["error"]["message"] =
+        "You are not allowed to confirm this order";
+
+    auto response =
+        drogon::HttpResponse::newHttpJsonResponse(responseJson);
+
+    response->setStatusCode(drogon::k403Forbidden);
+    callback(response);
+    return;
+}
 
     bool success = service.confirmOrder(orderId);
+
     if (success)
-{
-    auto userIdParam = req->getParameter("userId");
-
-    if (!userIdParam.empty())
     {
-        long long userId = std::stoll(userIdParam);
-
         CartRepository cartRepository;
         cartRepository.clearCart(userId);
     }
-}
 
     Json::Value responseJson;
 
@@ -176,29 +271,73 @@ void OrderController::confirmOrder(
     response->setStatusCode(drogon::k400BadRequest);
     callback(response);
 }
+
+
 void OrderController::getSellerOrders(
     const drogon::HttpRequestPtr& req,
     std::function<void(const drogon::HttpResponsePtr&)>&& callback)
 {
-    auto sellerIdParam = req->getParameter("sellerId");
-
-    if (sellerIdParam.empty())
+    if (!req->session()->find("user_email"))
     {
         Json::Value responseJson;
         responseJson["success"] = false;
         responseJson["data"] = Json::nullValue;
-        responseJson["error"]["message"] =
-            "sellerId is required";
+        responseJson["error"]["message"] = "Login required";
 
         auto response =
             drogon::HttpResponse::newHttpJsonResponse(responseJson);
 
-        response->setStatusCode(drogon::k400BadRequest);
+        response->setStatusCode(drogon::k401Unauthorized);
         callback(response);
         return;
     }
 
-    long long sellerId = std::stoll(sellerIdParam);
+    std::string email =
+        req->session()->get<std::string>("user_email");
+
+    UserRepository userRepository;
+
+    auto userIdOptional =
+        userRepository.findUserIdByEmail(email);
+
+    if (!userIdOptional.has_value())
+    {
+        Json::Value responseJson;
+        responseJson["success"] = false;
+        responseJson["data"] = Json::nullValue;
+        responseJson["error"]["message"] = "User not found";
+
+        auto response =
+            drogon::HttpResponse::newHttpJsonResponse(responseJson);
+
+        response->setStatusCode(drogon::k401Unauthorized);
+        callback(response);
+        return;
+    }
+    UserRepository roleRepository;
+
+auto roleOptional =
+    roleRepository.findRoleByEmail(email);
+
+if (!roleOptional.has_value() ||
+    (roleOptional.value() != "SELLER" &&
+     roleOptional.value() != "ADMIN"))
+{
+    Json::Value responseJson;
+    responseJson["success"] = false;
+    responseJson["data"] = Json::nullValue;
+    responseJson["error"]["message"] =
+        "Seller or Admin access required";
+
+    auto response =
+        drogon::HttpResponse::newHttpJsonResponse(responseJson);
+
+    response->setStatusCode(drogon::k403Forbidden);
+    callback(response);
+    return;
+}
+
+    long long sellerId = userIdOptional.value();
 
     OrderService service;
 
@@ -237,11 +376,28 @@ void OrderController::getSellerOrders(
     response->setStatusCode(drogon::k200OK);
     callback(response);
 }
+
+
 void OrderController::updateOrderStatus(
     const drogon::HttpRequestPtr& req,
     std::function<void(const drogon::HttpResponsePtr&)>&& callback,
     long long orderId)
 {
+    if (!req->session()->find("user_email"))
+    {
+        Json::Value responseJson;
+        responseJson["success"] = false;
+        responseJson["data"] = Json::nullValue;
+        responseJson["error"]["message"] = "Login required";
+
+        auto response =
+            drogon::HttpResponse::newHttpJsonResponse(responseJson);
+
+        response->setStatusCode(drogon::k401Unauthorized);
+        callback(response);
+        return;
+    }
+
     auto status = req->getParameter("status");
 
     if (status.empty())

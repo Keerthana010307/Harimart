@@ -76,6 +76,17 @@ bool OrderService::confirmOrder(long long orderId)
         "CONFIRMED"
     );
 }
+bool OrderService::isOrderOwnedByBuyer(
+    long long orderId,
+    long long buyerId)
+{
+    OrderRepository repository;
+
+    return repository.isOrderOwnedByBuyer(
+        orderId,
+        buyerId
+    );
+}
 std::vector<Order> OrderService::getOrdersBySeller(
     long long sellerId)
 {

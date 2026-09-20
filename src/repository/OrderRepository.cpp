@@ -137,3 +137,20 @@ bool OrderRepository::hasCompletedPurchase(
 
     return result[0]["count"].as<long long>() > 0;
 }
+bool OrderRepository::isOrderOwnedByBuyer(
+    long long orderId,
+    long long buyerId)
+{
+    auto dbClient = Database::getClient();
+
+    auto result = dbClient->execSqlSync(
+        "SELECT COUNT(*) AS count "
+        "FROM orders "
+        "WHERE id = $1 "
+        "AND buyer_id = $2",
+        orderId,
+        buyerId
+    );
+
+    return result[0]["count"].as<long long>() > 0;
+}

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HariMart</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #222;
+        }
+
+        header {
+            background: #111827;
+            color: white;
+            padding: 18px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            color: #60a5fa;
+        }
+
+        nav button {
+            margin-left: 8px;
+            padding: 9px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1100px;
+            margin: 30px auto;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button.primary {
+            background: #2563eb;
+            color: white;
+            padding: 11px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button.danger {
+            background: #dc2626;
+            color: white;
+            padding: 8px 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .product {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+
+        .product h3 {
+            margin-bottom: 10px;
+        }
+
+        .price {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #16a34a;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .message {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 6px;
+            background: #e0f2fe;
+        }
+
+        .cart-item,
+        .order-item {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>🛒 HariMart</h1>
+
+    <nav>
+        <button onclick="showSection('productsSection')">Products</button>
+        <button onclick="showSection('cartSection')">Cart</button>
+        <button onclick="showSection('ordersSection')">Orders</button>
+        <button onclick="logout()">Logout</button>
+    </nav>
+</header>
+
+<div class="container">
+
+    <!-- LOGIN -->
+    <section id="loginSection" class="card">
+        <h2>Login</h2>
+
+        <input id="email" type="email" placeholder="Email">
+        <input id="password" type="password" placeholder="Password">
+
+        <button class="primary" onclick="login()">Login</button>
+
+        <div id="loginMessage"></div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section id="productsSection" class="hidden">
+        <div class="card">
+            <h2>Products</h2>
+            <div id="products" class="products"></div>
+        </div>
+    </section>
+
+    <!-- CART -->
+    <section id="cartSection" class="hidden">
+        <div class="card">
+            <h2>🛒 My Cart</h2>
+
+            <div id="cartItems"></div>
+
+            <h3 id="cartTotal">Total: ₹0</h3>
+
+            <br>
+
+            <button class="primary" onclick="checkout()">
+                Checkout
+            </button>
+
+            <div id="cartMessage"></div>
+        </div>
+    </section>
+
+    <!-- ORDERS -->
+    <section id="ordersSection" class="hidden">
+        <div class="card">
+            <h2>📦 My Orders</h2>
+
+            <div id="orders"></div>
+        </div>
+    </section>
+
+</div>
+
+<script>
+
+const API = "http://localhost:8080/api/v1";
+
+
+function showSection(sectionId) {
+
+    document.getElementById("loginSection")
+        .classList.add("hidden");
+
+    document.getElementById("productsSection")
+        .classList.add("hidden");
+
+    document.getElementById("cartSection")
+        .classList.add("hidden");
+
+    document.getElementById("ordersSection")
+        .classList.add("hidden");
+
+    document.getElementById(sectionId)
+        .classList.remove("hidden");
+
+    if (sectionId === "productsSection") {
+        loadProducts();
+    }
+
+    if (sectionId === "cartSection") {
+        loadCart();
+    }
+
+    if (sectionId === "ordersSection") {
+        loadOrders();
+    }
+}
+
+
+async function login() {
+
+    const email =
+        document.getElementById("email").value;
+
+    const password =
+        document.getElementById("password").value;
+
+    const response = await fetch(
+        API + "/auth/login",
+        {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        }
+    );
+
+    const data = await response.json();
+
+    if (response.ok) {
+
+        document.getElementById("loginMessage").innerHTML =
+            "<div class='message'>Login successful ✅</div>";
+
+        showSection("productsSection");
+
+    } else {
+
+        document.getElementById("loginMessage").innerHTML =
+            "<div class='message'>" +
+            (data.error?.message || data.error || "Login failed") +
+            "</div>";
+    }
+}
+
+
+async function loadProducts() {
+
+    const response = await fetch(
+        API + "/products",
+        {
+            credentials: "include"
+        }
+    );
+
+    const data = await response.json();
+
+    const productsDiv =
+        document.getElementById("products");
+
+    productsDiv.innerHTML = "";
+
+    if (!data.success) {
+        productsDiv.innerHTML =
+            "<p>Unable to load products</p>";
+        return;
+    }
+
+    const products =
+        data.data?.products || data.data || [];
+
+    products.forEach(product => {
+
+        productsDiv.innerHTML += `
+            <div class="product">
+
+                <h3>${product.name}</h3>
+
+                <p>${product.description || ""}</p>
+
+                <div class="price">
+                    ₹${(product.priceCents / 100).toFixed(2)}
+                </div>
+
+                <p>Stock: ${product.stock}</p>
+
+                <br>
+
+                <button
+                    class="primary"
+                    onclick="addToCart(${product.id})">
+                    Add to Cart
+                </button>
+
+            </div>
+        `;
+    });
+}
+
+
+async function addToCart(productId) {
+
+    const response = await fetch(
+        API + "/cart",
+        {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                productId: productId,
+                quantity: 1
+            })
+        }
+    );
+
+    const data = await response.json();
+
+    alert(
+        data.success
+        ? "Product added to cart ✅"
+        : "Unable to add product"
+    );
+}
+
+
+async function loadCart() {
+
+    const response = await fetch(
+        API + "/cart",
+        {
+            credentials: "include"
+        }
+    );
+
+    const data = await response.json();
+
+    const cartDiv =
+        document.getElementById("cartItems");
+
+    cartDiv.innerHTML = "";
+
+    if (!data.success) {
+        cartDiv.innerHTML = "<p>Unable to load cart</p>";
+        return;
+    }
+
+    const items =
+        data.data.items || [];
+
+    if (items.length === 0) {
+
+        cartDiv.innerHTML =
+            "<p>Your cart is empty.</p>";
+
+        document.getElementById("cartTotal")
+            .innerText = "Total: ₹0";
+
+        return;
+    }
+
+    items.forEach(item => {
+
+        cartDiv.innerHTML += `
+            <div class="cart-item">
+
+                Product ID: ${item.productId}
+
+                <br>
+
+                Quantity: ${item.quantity}
+
+                <br>
+
+                Price:
+                ₹${(item.priceCents / 100).toFixed(2)}
+
+            </div>
+        `;
+    });
+
+    document.getElementById("cartTotal")
+        .innerText =
+        "Total: ₹" +
+        (data.data.totalCents / 100).toFixed(2);
+}
+
+
+async function checkout() {
+
+    const orderResponse = await fetch(
+        API + "/orders",
+        {
+            method: "POST",
+            credentials: "include"
+        }
+    );
+
+    const orderData =
+        await orderResponse.json();
+
+    if (!orderResponse.ok) {
+
+        alert(
+            orderData.error?.message ||
+            "Checkout failed"
+        );
+
+        return;
+    }
+
+    const orderId =
+        orderData.data.orderId;
+
+    const paymentResponse = await fetch(
+        API + "/orders/" + orderId + "/confirm",
+        {
+            method: "POST",
+            credentials: "include"
+        }
+    );
+
+    const paymentData =
+        await paymentResponse.json();
+
+    if (paymentResponse.ok) {
+
+        alert(
+            "Payment successful! Order #" +
+            orderId
+        );
+
+        loadCart();
+        loadOrders();
+
+    } else {
+
+        alert("Payment failed");
+    }
+}
+
+
+async function loadOrders() {
+
+    const response = await fetch(
+        API + "/orders",
+        {
+            credentials: "include"
+        }
+    );
+
+    const data = await response.json();
+
+    const ordersDiv =
+        document.getElementById("orders");
+
+    ordersDiv.innerHTML = "";
+
+    if (!data.success) {
+        ordersDiv.innerHTML =
+            "<p>Unable to load orders</p>";
+        return;
+    }
+
+    const orders =
+        data.data.orders || [];
+
+    if (orders.length === 0) {
+
+        ordersDiv.innerHTML =
+            "<p>No orders yet.</p>";
+
+        return;
+    }
+
+    orders.forEach(order => {
+
+        ordersDiv.innerHTML += `
+            <div class="order-item">
+
+                <strong>
+                    Order #${order.id}
+                </strong>
+
+                <br>
+
+                Status:
+                ${order.status}
+
+                <br>
+
+                Total:
+                ₹${(order.totalAmountCents / 100).toFixed(2)}
+
+            </div>
+        `;
+    });
+}
+
+
+function logout() {
+
+    location.reload();
+}
+
+</script>
+
+</body>
+</html>
