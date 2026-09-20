@@ -149,3 +149,17 @@ bool ProductRepository::deleteProduct(
 
     return result.affectedRows() > 0;
 }
+
+bool ProductRepository::adminDeleteProduct(
+    long long id)
+{
+    auto dbClient = Database::getClient();
+
+    auto result = dbClient->execSqlSync(
+        "DELETE FROM products "
+        "WHERE id = $1",
+        id
+    );
+
+    return result.affectedRows() > 0;
+}

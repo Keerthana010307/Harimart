@@ -19,7 +19,9 @@ public:
 
     std::vector<Product> getAllProducts();
 
-    std::optional<Product> getProductById(long long id);
+    std::optional<Product> getProductById(
+        long long id
+    );
 
     bool updateProduct(
         long long id,
@@ -33,5 +35,9 @@ public:
     bool deleteProduct(
         long long id,
         long long sellerId
+    );
+
+    bool adminDeleteProduct(
+        long long id
     );
 };

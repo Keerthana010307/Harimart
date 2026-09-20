@@ -34,4 +34,7 @@ public:
         long long  id,
         long long sellerId
     );
+    bool adminDeleteProduct(
+    long long id
+);
 };

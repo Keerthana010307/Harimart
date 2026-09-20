@@ -1,5 +1,4 @@
 #include "ProductService.h"
-
 #include "../repository/ProductRepository.h"
 
 bool ProductService::createProduct(
@@ -35,7 +34,8 @@ std::vector<Product> ProductService::getAllProducts()
     return repository.getAllProducts();
 }
 
-std::optional<Product> ProductService::getProductById(long long id)
+std::optional<Product> ProductService::getProductById(
+    long long id)
 {
     if (id <= 0)
     {
@@ -91,4 +91,17 @@ bool ProductService::deleteProduct(
         id,
         sellerId
     );
+}
+
+bool ProductService::adminDeleteProduct(
+    long long id)
+{
+    if (id <= 0)
+    {
+        return false;
+    }
+
+    ProductRepository repository;
+
+    return repository.adminDeleteProduct(id);
 }
