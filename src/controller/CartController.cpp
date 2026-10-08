@@ -327,23 +327,42 @@ void CartController::removeFromCart(
     std::function<void(const drogon::HttpResponsePtr&)>&& callback,
     long long id)
 {
-    auto jsonBody = req->getJsonObject();
-
-    if (!jsonBody || !jsonBody->isMember("userId"))
+    if (!req->session()->find("user_email"))
     {
         Json::Value responseJson;
         responseJson["success"] = false;
-        responseJson["error"] = "userId is required";
+        responseJson["error"] = "Login required";
         responseJson["data"] = Json::nullValue;
 
         auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
-        response->setStatusCode(drogon::k400BadRequest);
+        response->setStatusCode(drogon::k401Unauthorized);
         callback(response);
         return;
     }
 
+    std::string email =
+        req->session()->get<std::string>("user_email");
+
+    UserRepository userRepository;
+
+    auto userIdOptional =
+        userRepository.findUserIdByEmail(email);
+
+    if (!userIdOptional.has_value())
+    {
+        Json::Value responseJson;
+        responseJson["success"] = false;
+        responseJson["error"] = "User not found";
+        responseJson["data"] = Json::nullValue;
+
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
+        response->setStatusCode(drogon::k401Unauthorized);
+        callback(response);
+        return;
+    }
+
+    long long userId = userIdOptional.value();
     long long productId = id;
-    long long userId = (*jsonBody)["userId"].asInt64();
 
     CartService service;
 
@@ -368,4 +387,4 @@ void CartController::removeFromCart(
     auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
     response->setStatusCode(drogon::k200OK);
     callback(response);
-}
+}

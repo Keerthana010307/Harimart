@@ -1,531 +1,2582 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HariMart</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HariMart | Smart Marketplace</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            color: #222;
-        }
+:root {
+    --primary: #6c4cff;
+    --primary-dark: #5235d8;
+    --bg: #f6f7fb;
+    --white: #ffffff;
+    --text: #202124;
+    --muted: #70757a;
+    --border: #e4e5eb;
+    --green: #159957;
+    --danger: #d93025;
+    --shadow: 0 10px 30px rgba(0,0,0,.07);
+}
 
-        header {
-            background: #111827;
-            color: white;
-            padding: 18px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
 
-        header h1 {
-            color: #60a5fa;
-        }
+/* ================= AUTH ================= */
 
-        nav button {
-            margin-left: 8px;
-            padding: 9px 15px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
+#authScreen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    background:
+        radial-gradient(circle at top left, #ddd5ff, transparent 35%),
+        radial-gradient(circle at bottom right, #d8f5ff, transparent 35%),
+        #f7f7fb;
+}
 
-        .container {
-            width: 90%;
-            max-width: 1100px;
-            margin: 30px auto;
-        }
+.auth-box {
+    width: 100%;
+    max-width: 1000px;
+    min-height: 600px;
+    background: white;
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
 
-        .card {
-            background: white;
-            padding: 25px;
-            margin-bottom: 20px;
-            border-radius: 12px;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
-        }
+.auth-left {
+    padding: 60px;
+    background: linear-gradient(145deg, #6547ff, #8a70ff);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
 
-        input {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
+.auth-left h1 {
+    font-size: 48px;
+    line-height: 1.05;
+    margin: 25px 0;
+}
 
-        button.primary {
-            background: #2563eb;
-            color: white;
-            padding: 11px 18px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
+.auth-left p {
+    line-height: 1.7;
+    opacity: .9;
+}
 
-        button.danger {
-            background: #dc2626;
-            color: white;
-            padding: 8px 14px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
+.auth-right {
+    padding: 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
 
-        .products {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-        }
+.logo {
+    font-size: 26px;
+    font-weight: 900;
+}
 
-        .product {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-        }
+.auth-tabs {
+    display: flex;
+    gap: 10px;
+    margin: 30px 0;
+}
 
-        .product h3 {
-            margin-bottom: 10px;
-        }
+.auth-tabs button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: #f1efff;
+    color: var(--primary);
+    font-weight: 700;
+}
 
-        .price {
-            font-size: 20px;
-            font-weight: bold;
-            margin: 10px 0;
-            color: #16a34a;
-        }
+.auth-tabs button.active {
+    background: var(--primary);
+    color: white;
+}
 
-        .hidden {
-            display: none;
-        }
+.input-group {
+    margin-bottom: 16px;
+}
 
-        .message {
-            margin: 15px 0;
-            padding: 10px;
-            border-radius: 6px;
-            background: #e0f2fe;
-        }
+.input-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 7px;
+}
 
-        .cart-item,
-        .order-item {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-        }
-    </style>
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    outline: none;
+    font-size: 14px;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    border-color: var(--primary);
+}
+
+.primary-btn {
+    width: 100%;
+    border: none;
+    padding: 14px;
+    border-radius: 10px;
+    background: var(--primary);
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.primary-btn:hover {
+    background: var(--primary-dark);
+}
+
+.message {
+    margin-top: 15px;
+    font-size: 13px;
+    text-align: center;
+}
+
+/* ================= APP ================= */
+
+#mainApp {
+    display: none;
+}
+
+.navbar {
+    height: 72px;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 5%;
+    gap: 25px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.nav-logo {
+    font-size: 23px;
+    font-weight: 900;
+    color: var(--primary);
+    cursor: pointer;
+}
+
+.nav-search {
+    flex: 1;
+    max-width: 550px;
+}
+
+.nav-search input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 25px;
+    outline: none;
+}
+
+.nav-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-actions button {
+    border: none;
+    background: #f4f2ff;
+    color: var(--primary);
+    padding: 10px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.logout {
+    background: #fff0f0 !important;
+    color: var(--danger) !important;
+}
+
+.page {
+    display: none;
+    padding: 40px 5%;
+}
+
+.page.active {
+    display: block;
+}
+
+.container {
+    max-width: 1250px;
+    margin: auto;
+}
+
+/* ================= HERO ================= */
+
+.hero {
+    background: linear-gradient(135deg, #6345ff, #8e73ff);
+    border-radius: 25px;
+    padding: 65px;
+    color: white;
+    margin-bottom: 35px;
+}
+
+.hero h1 {
+    font-size: 46px;
+    max-width: 650px;
+}
+
+.hero p {
+    max-width: 600px;
+    margin-top: 15px;
+    line-height: 1.7;
+    opacity: .9;
+}
+
+.hero button {
+    margin-top: 25px;
+    padding: 14px 25px;
+    border: none;
+    border-radius: 10px;
+    background: white;
+    color: var(--primary);
+    font-weight: 800;
+    cursor: pointer;
+}
+
+/* ================= PRODUCTS ================= */
+
+.section-title {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.section-subtitle {
+    color: var(--muted);
+    margin-bottom: 25px;
+}
+
+.filter-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+}
+
+.filter-row button {
+    padding: 9px 15px;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.filter-row button:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.product-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    overflow: hidden;
+    transition: .2s;
+}
+
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+}
+
+.product-image {
+    height: 210px;
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-info {
+    padding: 18px;
+}
+
+.product-name {
+    font-weight: 800;
+    margin-bottom: 7px;
+}
+
+.product-description {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+    min-height: 40px;
+}
+
+.product-price {
+    color: var(--primary);
+    font-size: 20px;
+    font-weight: 900;
+    margin: 14px 0;
+}
+
+.stock {
+    font-size: 12px;
+    color: var(--green);
+    margin-bottom: 12px;
+}
+
+.product-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.product-actions button {
+    flex: 1;
+    border: none;
+    padding: 10px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.cart-btn {
+    background: #eeeaff;
+    color: var(--primary);
+}
+
+.buy-btn {
+    background: var(--primary);
+    color: white;
+}
+
+/* ================= CART ================= */
+
+.cart-layout {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 25px;
+}
+
+.box {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 25px;
+}
+
+.cart-item {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.cart-item-info {
+    flex: 1;
+}
+
+.cart-item-info h3 {
+    font-size: 15px;
+}
+
+.cart-item-info p {
+    color: var(--muted);
+    margin-top: 5px;
+}
+
+.remove-btn {
+    border: none;
+    background: #fff0f0;
+    color: var(--danger);
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 21px;
+    font-weight: 900;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+    margin-top: 20px;
+}
+
+/* ================= SELLER ================= */
+
+.form-card {
+    max-width: 650px;
+    background: white;
+    padding: 30px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+}
+
+/* ================= STATUS ================= */
+
+.status {
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: #f0f0f0;
+    margin-top: 15px;
+    font-size: 13px;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media(max-width: 900px) {
+    .auth-box {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-left {
+        display: none;
+    }
+
+    .product-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .cart-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .navbar {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 15px 5%;
+    }
+
+    .nav-search {
+        order: 3;
+        flex-basis: 100%;
+        max-width: none;
+    }
+}
+
+@media(max-width: 600px) {
+    .product-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero {
+        padding: 35px;
+    }
+
+    .hero h1 {
+        font-size: 34px;
+    }
+
+    .auth-right {
+        padding: 30px;
+    }
+}
+/* =========================================================
+   REVIEW MODAL
+========================================================= */
+
+.review-modal {
+    display: none;
+
+    position: fixed;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: rgba(0, 0, 0, 0.65);
+
+    align-items: center;
+    justify-content: center;
+
+    z-index: 99999;
+
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.review-modal-content {
+    position: relative;
+
+    width: min(600px, 95%);
+    max-height: 85vh;
+
+    overflow-y: auto;
+
+    background: #ffffff;
+
+    border-radius: 20px;
+
+    padding: 30px;
+
+    box-sizing: border-box;
+
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.3);
+
+    animation: reviewPopup 0.25s ease-out;
+}
+
+@keyframes reviewPopup {
+
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.review-close-btn {
+    position: absolute;
+
+    top: 12px;
+    right: 15px;
+
+    border: none;
+    background: transparent;
+
+    font-size: 28px;
+
+    cursor: pointer;
+
+    color: #555;
+}
+
+.review-close-btn:hover {
+    color: #000;
+}
+
+.review-summary {
+    margin: 15px 0;
+
+    padding: 12px;
+
+    background: #f7f7f7;
+
+    border-radius: 10px;
+
+    font-weight: 600;
+}
+
+.reviews-list {
+    margin: 15px 0;
+}
+
+.single-review {
+    padding: 14px;
+
+    margin-bottom: 10px;
+
+    background: #f8f8f8;
+
+    border-radius: 12px;
+}
+
+.review-stars {
+    color: #f5a623;
+
+    font-size: 18px;
+
+    margin-bottom: 6px;
+}
+
+.write-review-section {
+    margin-top: 20px;
+}
+
+.star-rating {
+    display: flex;
+
+    gap: 6px;
+
+    margin: 12px 0;
+}
+
+.star-rating span {
+    font-size: 30px;
+
+    color: #f5a623;
+
+    cursor: pointer;
+
+    opacity: 0.3;
+
+    transition: 0.15s;
+}
+
+.star-rating span:hover {
+    transform: scale(1.15);
+}
+
+#reviewComment {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 12px;
+
+    border: 1px solid #ddd;
+
+    border-radius: 10px;
+
+    resize: vertical;
+
+    font-family: inherit;
+
+    font-size: 14px;
+}
+
+.submit-review-btn {
+    margin-top: 12px;
+
+    width: 100%;
+
+    padding: 12px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: #111;
+
+    color: white;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.submit-review-btn:hover {
+    opacity: 0.85;
+}
+</style>
 </head>
 
 <body>
 
-<header>
-    <h1>🛒 HariMart</h1>
+<!-- =========================================================
+     AUTH
+========================================================= -->
 
-    <nav>
-        <button onclick="showSection('productsSection')">Products</button>
-        <button onclick="showSection('cartSection')">Cart</button>
-        <button onclick="showSection('ordersSection')">Orders</button>
-        <button onclick="logout()">Logout</button>
-    </nav>
-</header>
+<div id="authScreen">
 
-<div class="container">
+    <div class="auth-box">
 
-    <!-- LOGIN -->
-    <section id="loginSection" class="card">
-        <h2>Login</h2>
+        <div class="auth-left">
 
-        <input id="email" type="email" placeholder="Email">
-        <input id="password" type="password" placeholder="Password">
+            <div class="logo">🛒 HariMart</div>
 
-        <button class="primary" onclick="login()">Login</button>
+            <h1>
+                Shop smart.<br>
+                Shop simple.
+            </h1>
 
-        <div id="loginMessage"></div>
-    </section>
+            <p>
+                A multi-seller marketplace built with
+                C++, Drogon and PostgreSQL.
+            </p>
 
-    <!-- PRODUCTS -->
-    <section id="productsSection" class="hidden">
-        <div class="card">
-            <h2>Products</h2>
-            <div id="products" class="products"></div>
+            <p style="margin-top:25px;">
+                🔐 Secure authentication<br>
+                🛍️ Real database products<br>
+                🏪 Seller marketplace
+            </p>
+
         </div>
-    </section>
 
-    <!-- CART -->
-    <section id="cartSection" class="hidden">
-        <div class="card">
-            <h2>🛒 My Cart</h2>
+        <div class="auth-right">
 
-            <div id="cartItems"></div>
+            <div class="logo">
+                HariMart
+            </div>
 
-            <h3 id="cartTotal">Total: ₹0</h3>
+            <div class="auth-tabs">
 
-            <br>
+                <button
+                    id="loginTab"
+                    class="active"
+                    onclick="showAuth('login')">
+                    Login
+                </button>
 
-            <button class="primary" onclick="checkout()">
-                Checkout
+                <button
+                    id="registerTab"
+                    onclick="showAuth('register')">
+                    Register
+                </button>
+
+            </div>
+
+            <!-- LOGIN -->
+
+            <form id="loginForm">
+
+                <div class="input-group">
+
+                    <label>Email</label>
+
+                    <input
+                        id="loginEmail"
+                        type="email"
+                        placeholder="you@example.com"
+                        required>
+
+                </div>
+
+                <div class="input-group">
+
+                    <label>Password</label>
+
+                    <input
+                        id="loginPassword"
+                        type="password"
+                        placeholder="Password"
+                        required>
+
+                </div>
+
+                <button
+                    class="primary-btn"
+                    type="submit">
+
+                    Login to HariMart
+
+                </button>
+
+                <div
+                    id="loginMessage"
+                    class="message">
+                </div>
+
+            </form>
+
+            <!-- REGISTER -->
+
+            <form
+                id="registerForm"
+                style="display:none;">
+
+                <div class="input-group">
+
+                    <label>Name</label>
+
+                    <input
+                        id="registerName"
+                        type="text"
+                        placeholder="Your name"
+                        required>
+
+                </div>
+
+                <div class="input-group">
+
+                    <label>Email</label>
+
+                    <input
+                        id="registerEmail"
+                        type="email"
+                        placeholder="you@example.com"
+                        required>
+
+                </div>
+
+                <div class="input-group">
+
+                    <label>Password</label>
+
+                    <input
+                        id="registerPassword"
+                        type="password"
+                        placeholder="Create password"
+                        required>
+
+                </div>
+
+                <div class="input-group">
+
+                    <label>Role</label>
+
+                    <select id="registerRole">
+
+                        <option value="BUYER">
+                            Buyer
+                        </option>
+
+                        <option value="SELLER">
+                            Seller
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <button
+                    class="primary-btn"
+                    type="submit">
+
+                    Create Account
+
+                </button>
+
+                <div
+                    id="registerMessage"
+                    class="message">
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     MAIN APP
+========================================================= -->
+
+<div id="mainApp">
+
+    <nav class="navbar">
+
+        <div
+            class="nav-logo"
+            onclick="showPage('home')">
+
+            🛒 HariMart
+
+        </div>
+
+        <div class="nav-search">
+
+            <input
+                id="globalSearch"
+                placeholder="Search real HariMart products...">
+
+        </div>
+
+        <div class="nav-actions">
+
+            <button onclick="showPage('home')">
+                Home
             </button>
 
-            <div id="cartMessage"></div>
+            <button onclick="showPage('products')">
+                Products
+            </button>
+
+            <button onclick="showPage('cart'); updateCart();">
+                🛒 Cart
+                <span id="cartBadge">0</span>
+            </button>
+
+            <button
+                id="sellerButton"
+                onclick="showPage('seller')"
+                style="display:none;">
+                Seller
+            </button>
+
+            <button
+                class="logout"
+                onclick="logout()">
+                Logout
+            </button>
+
         </div>
+
+    </nav>
+
+
+    <!-- HOME -->
+
+    <section
+        id="home"
+        class="page active">
+
+        <div class="container">
+
+            <div class="hero">
+
+                <h1>
+                    Welcome to HariMart 🛍️
+                </h1>
+
+                <p>
+                    A real multi-seller marketplace
+                    connected to our C++ Drogon backend
+                    and PostgreSQL database.
+                </p>
+
+                <button onclick="showPage('products')">
+                    Explore Products
+                </button>
+
+            </div>
+
+            <h2 class="section-title">
+                Products from PostgreSQL
+            </h2>
+
+            <p class="section-subtitle">
+                These products are loaded from the HariMart backend.
+            </p>
+
+            <div
+                id="homeProducts"
+                class="product-grid">
+            </div>
+
+        </div>
+
     </section>
 
-    <!-- ORDERS -->
-    <section id="ordersSection" class="hidden">
-        <div class="card">
-            <h2>📦 My Orders</h2>
 
-            <div id="orders"></div>
+    <!-- PRODUCTS -->
+
+    <section
+        id="products"
+        class="page">
+
+        <div class="container">
+
+            <h2 class="section-title">
+                HariMart Products
+            </h2>
+
+            <p class="section-subtitle">
+                Live products received from the backend.
+            </p>
+
+            <div class="filter-row">
+
+                <button onclick="filterProducts('all')">
+                    All
+                </button>
+
+                <button onclick="filterProducts('fashion')">
+                    Fashion
+                </button>
+
+                <button onclick="filterProducts('electronics')">
+                    Electronics
+                </button>
+
+                <button onclick="filterProducts('home')">
+                    Home
+                </button>
+
+            </div>
+
+            <div
+                id="productGrid"
+                class="product-grid">
+
+                <p>
+                    Loading products...
+                </p>
+
+            </div>
+
         </div>
+
+    </section>
+
+
+    <!-- CART -->
+
+    <section
+        id="cart"
+        class="page">
+
+        <div class="container">
+
+            <h2 class="section-title">
+                Your Cart 🛒
+            </h2>
+
+            <p class="section-subtitle">
+                Products selected from the real HariMart catalogue.
+            </p>
+
+            <div class="cart-layout">
+
+                <div
+                    class="box"
+                    id="cartItems">
+
+                    <p>
+                        Your cart is empty.
+                    </p>
+
+                </div>
+
+                <div class="box">
+
+                    <h3>
+                        Cart Summary
+                    </h3>
+
+                    <div class="total">
+
+                        <span>Total</span>
+
+                        <span id="cartTotal">
+                            ₹0.00
+                        </span>
+
+                    </div>
+
+                    <button
+                        class="primary-btn"
+                        style="margin-top:20px;"
+                        onclick="checkoutMessage()">
+
+                        Proceed to Checkout
+
+                    </button>
+
+                    <div
+                        id="checkoutStatus"
+                        class="status"
+                        style="display:none;">
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- SELLER -->
+
+    <section
+        id="seller"
+        class="page">
+
+        <div class="container">
+
+            <h2 class="section-title">
+                Seller Dashboard 🏪
+            </h2>
+
+            <p class="section-subtitle">
+                Add a product directly through the HariMart backend.
+            </p>
+
+            <div class="form-card">
+
+                <form id="productForm">
+
+                    <div class="input-group">
+
+                        <label>
+                            Seller ID
+                        </label>
+
+                        <input
+                            id="sellerId"
+                            type="number"
+                            placeholder="Your seller ID"
+                            required>
+
+                    </div>
+
+                    <div class="input-group">
+
+                        <label>
+                            Product Name
+                        </label>
+
+                        <input
+                            id="productName"
+                            required>
+
+                    </div>
+
+                    <div class="input-group">
+
+                        <label>
+                            Description
+                        </label>
+
+                        <input
+                            id="productDescription"
+                            required>
+
+                    </div>
+
+                    <div class="input-group">
+
+                        <label>
+                            Price ₹
+                        </label>
+
+                        <input
+                            id="productPrice"
+                            type="number"
+                            step="0.01"
+                            required>
+
+                    </div>
+
+                    <div class="input-group">
+
+                        <label>
+                            Stock
+                        </label>
+
+                        <input
+                            id="productStock"
+                            type="number"
+                            required>
+
+                    </div>
+
+                    <button
+                        class="primary-btn"
+                        type="submit">
+
+                        Add Product to PostgreSQL
+
+                    </button>
+
+                    <div
+                        id="productMessage"
+                        class="message">
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
     </section>
 
 </div>
 
+
 <script>
 
-const API = "http://localhost:8080/api/v1";
+/* =========================================================
+   REAL HARI MART BACKEND
+========================================================= */
+
+const API_BASE_URL = "http://127.0.0.1:8080";
+
+let products = [];
+let cart = [];
+
+let currentUser = null;
 
 
-function showSection(sectionId) {
+/* =========================================================
+   HELPERS
+========================================================= */
 
-    document.getElementById("loginSection")
-        .classList.add("hidden");
+function showAuth(type) {
 
-    document.getElementById("productsSection")
-        .classList.add("hidden");
+    const loginForm =
+        document.getElementById("loginForm");
 
-    document.getElementById("cartSection")
-        .classList.add("hidden");
+    const registerForm =
+        document.getElementById("registerForm");
 
-    document.getElementById("ordersSection")
-        .classList.add("hidden");
+    const loginTab =
+        document.getElementById("loginTab");
 
-    document.getElementById(sectionId)
-        .classList.remove("hidden");
+    const registerTab =
+        document.getElementById("registerTab");
 
-    if (sectionId === "productsSection") {
-        loadProducts();
-    }
+    if (type === "login") {
 
-    if (sectionId === "cartSection") {
-        loadCart();
-    }
+        loginForm.style.display = "block";
+        registerForm.style.display = "none";
 
-    if (sectionId === "ordersSection") {
-        loadOrders();
-    }
-}
-
-
-async function login() {
-
-    const email =
-        document.getElementById("email").value;
-
-    const password =
-        document.getElementById("password").value;
-
-    const response = await fetch(
-        API + "/auth/login",
-        {
-            method: "POST",
-            credentials: "include",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
-        }
-    );
-
-    const data = await response.json();
-
-    if (response.ok) {
-
-        document.getElementById("loginMessage").innerHTML =
-            "<div class='message'>Login successful ✅</div>";
-
-        showSection("productsSection");
+        loginTab.classList.add("active");
+        registerTab.classList.remove("active");
 
     } else {
 
-        document.getElementById("loginMessage").innerHTML =
-            "<div class='message'>" +
-            (data.error?.message || data.error || "Login failed") +
-            "</div>";
+        loginForm.style.display = "none";
+        registerForm.style.display = "block";
+
+        loginTab.classList.remove("active");
+        registerTab.classList.add("active");
+
     }
 }
 
+
+function showPage(id) {
+
+    document
+        .querySelectorAll(".page")
+        .forEach(page => {
+            page.classList.remove("active");
+        });
+
+    const page =
+        document.getElementById(id);
+
+    if (page) {
+        page.classList.add("active");
+    }
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+    if (id === "products") {
+        loadProducts();
+    }
+}
+
+
+/* =========================================================
+   LOGIN
+========================================================= */
+
+document
+    .getElementById("loginForm")
+    .addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+        const email =
+            document
+                .getElementById("loginEmail")
+                .value
+                .trim();
+
+        const password =
+            document
+                .getElementById("loginPassword")
+                .value;
+
+        const message =
+            document.getElementById("loginMessage");
+
+        message.textContent =
+            "Connecting to HariMart server...";
+
+        try {
+
+            const response =
+                await fetch(
+                    API_BASE_URL +
+                    "/api/v1/auth/login",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        credentials: "include",
+
+                        body: JSON.stringify({
+                            email: email,
+                            password: password
+                        })
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            console.log(
+                "LOGIN RESPONSE:",
+                data
+            );
+
+            if (response.ok && data.success) {
+
+                currentUser =
+                    data.data;
+
+                localStorage.setItem(
+                    "hariMartUser",
+                    JSON.stringify(currentUser)
+                );
+
+                document
+                    .getElementById("authScreen")
+                    .style.display = "none";
+
+                document
+                    .getElementById("mainApp")
+                    .style.display = "block";
+
+                if (
+                    currentUser.role === "SELLER"
+                ) {
+
+                    document
+                        .getElementById("sellerButton")
+                        .style.display = "block";
+
+                }
+
+                message.textContent = "";
+
+                loadProducts();
+
+                showPage("home");
+
+            } else {
+
+                message.textContent =
+                    data.error?.message ||
+                    "Login failed.";
+
+            }
+
+        } catch (error) {
+
+            console.error(error);
+
+            message.textContent =
+                "Cannot connect to HariMart backend.";
+
+        }
+
+    });
+
+
+/* =========================================================
+   REGISTER
+========================================================= */
+
+document
+    .getElementById("registerForm")
+    .addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+        const name =
+            document
+                .getElementById("registerName")
+                .value
+                .trim();
+
+        const email =
+            document
+                .getElementById("registerEmail")
+                .value
+                .trim();
+
+        const password =
+            document
+                .getElementById("registerPassword")
+                .value;
+
+        const role =
+            document
+                .getElementById("registerRole")
+                .value;
+
+        const message =
+            document.getElementById(
+                "registerMessage"
+            );
+
+        message.textContent =
+            "Creating account...";
+
+        try {
+
+            const response =
+                await fetch(
+                    API_BASE_URL +
+                    "/api/v1/auth/register",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            name: name,
+                            email: email,
+                            password: password,
+                            role: role
+                        })
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (response.ok && data.success) {
+
+                message.textContent =
+                    "Account created successfully. Login now.";
+
+                setTimeout(
+                    () => showAuth("login"),
+                    1000
+                );
+
+            } else {
+
+                message.textContent =
+                    data.error?.message ||
+                    "Registration failed.";
+
+            }
+
+        } catch (error) {
+
+            console.error(error);
+
+            message.textContent =
+                "Cannot connect to backend.";
+
+        }
+
+    });
+
+
+/* =========================================================
+   PRODUCTS FROM POSTGRESQL
+========================================================= */
 
 async function loadProducts() {
 
-    const response = await fetch(
-        API + "/products",
-        {
-            credentials: "include"
+    const grid =
+        document.getElementById("productGrid");
+
+    const homeGrid =
+        document.getElementById("homeProducts");
+
+    grid.innerHTML =
+        "<p>Loading products from PostgreSQL...</p>";
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL +
+                "/api/v1/products"
+            );
+
+        const result =
+            await response.json();
+
+        console.log(
+            "PRODUCT RESPONSE:",
+            result
+        );
+
+        if (
+            result &&
+            Array.isArray(result.data)
+        ) {
+
+            products = result.data;
+
+        } else if (
+            Array.isArray(result)
+        ) {
+
+            products = result;
+
+        } else {
+
+            products = [];
+
         }
-    );
 
-    const data = await response.json();
+        renderProducts(products);
 
-    const productsDiv =
-        document.getElementById("products");
+    } catch (error) {
 
-    productsDiv.innerHTML = "";
+        console.error(error);
 
-    if (!data.success) {
-        productsDiv.innerHTML =
-            "<p>Unable to load products</p>";
-        return;
-    }
-
-    const products =
-        data.data?.products || data.data || [];
-
-    products.forEach(product => {
-
-        productsDiv.innerHTML += `
-            <div class="product">
-
-                <h3>${product.name}</h3>
-
-                <p>${product.description || ""}</p>
-
-                <div class="price">
-                    ₹${(product.priceCents / 100).toFixed(2)}
-                </div>
-
-                <p>Stock: ${product.stock}</p>
-
-                <br>
-
-                <button
-                    class="primary"
-                    onclick="addToCart(${product.id})">
-                    Add to Cart
-                </button>
-
+        grid.innerHTML = `
+            <div class="box">
+                <h3>Backend connection failed</h3>
+                <p>
+                    Make sure HariMart.exe is running
+                    on localhost:8080.
+                </p>
             </div>
         `;
-    });
+
+        homeGrid.innerHTML = "";
+
+    }
 }
 
 
-async function addToCart(productId) {
+/* =========================================================
+   RENDER PRODUCTS
+========================================================= */
 
-    const response = await fetch(
-        API + "/cart",
-        {
+function renderProducts(list) {
+
+    const grid =
+        document.getElementById("productGrid");
+
+    const homeGrid =
+        document.getElementById("homeProducts");
+
+    if (!list.length) {
+
+        grid.innerHTML = `
+            <div class="box">
+                <h3>No products found</h3>
+            </div>
+        `;
+
+        homeGrid.innerHTML = "";
+
+        return;
+    }
+
+    grid.innerHTML =
+        list
+            .map(createProductCard)
+            .join("");
+
+    homeGrid.innerHTML =
+        list
+            .slice(0, 4)
+            .map(createProductCard)
+            .join("");
+}
+
+
+/* =========================================================
+   PRODUCT CARD
+========================================================= */
+
+function createProductCard(product) {
+
+    const price =
+        Number(product.priceCents || 0) / 100;
+
+    const stock =
+        Number(product.stock || 0);
+
+    const safeName =
+        escapeHtml(product.name || "Product");
+
+    const safeDescription =
+        escapeHtml(
+            product.description ||
+            "HariMart product"
+        );
+
+    return `
+        <div class="product-card">
+
+            <div class="product-image">
+
+                <div style="
+                    font-size:55px;
+                ">
+                    🛍️
+                </div>
+
+            </div>
+
+            <div class="product-info">
+
+                <div class="product-name">
+                    ${safeName}
+                </div>
+
+                <div class="product-description">
+                    ${safeDescription}
+                </div>
+
+                <div class="product-price">
+                    ₹${price.toFixed(2)}
+                </div>
+
+                <div class="stock">
+                    Stock: ${stock}
+                </div>
+
+                <div class="product-actions">
+
+                    <button
+                        class="cart-btn"
+                        onclick="addToCart(${product.id})">
+
+                        🛒 Add
+
+                    </button>
+
+                    <button
+                        class="review-product-btn"
+                        onclick="openReviewModal(${product.id})">
+
+                        ⭐ Reviews
+
+                    </button>
+
+                    <button
+                        class="buy-btn"
+                        onclick="addToCart(${product.id})">
+
+                        Buy
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+    `;
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+document
+    .getElementById("globalSearch")
+    .addEventListener("input", function() {
+
+        const query =
+            this.value
+                .toLowerCase()
+                .trim();
+
+        const filtered =
+            products.filter(product => {
+
+                const name =
+                    String(
+                        product.name || ""
+                    ).toLowerCase();
+
+                const description =
+                    String(
+                        product.description || ""
+                    ).toLowerCase();
+
+                return (
+                    name.includes(query) ||
+                    description.includes(query)
+                );
+
+            });
+
+        showPage("products");
+
+        renderProducts(filtered);
+
+    });
+
+
+/* =========================================================
+   FILTER
+========================================================= */
+
+function filterProducts(type) {
+
+    if (type === "all") {
+
+        renderProducts(products);
+        return;
+
+    }
+
+    const filtered =
+        products.filter(product => {
+
+            const text =
+                (
+                    product.name +
+                    " " +
+                    product.description
+                )
+                .toLowerCase();
+
+            return text.includes(type);
+
+        });
+
+    renderProducts(filtered);
+}
+
+
+/* =========================================================
+   CART
+========================================================= */
+function showToast(message) {
+    alert(message);
+}
+let addingToCart = false;
+
+async function addToCart(product) {
+
+    if (addingToCart) {
+        return;
+    }
+
+    addingToCart = true;
+
+    console.log("ADD TO CART CALLED:", product);
+
+    try {
+
+        const response = await fetch(API_BASE_URL + "/api/v1/cart", {
             method: "POST",
-            credentials: "include",
             headers: {
                 "Content-Type": "application/json"
             },
+            credentials: "include",
             body: JSON.stringify({
-                productId: productId,
+                productId: Number(product),
                 quantity: 1
             })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            showToast(result.error || "Unable to add product to cart");
+            return;
         }
-    );
 
-    const data = await response.json();
+        showToast("Product added to cart 🛒");
 
-    alert(
-        data.success
-        ? "Product added to cart ✅"
-        : "Unable to add product"
-    );
+    } catch (error) {
+
+        console.error("Add to cart error:", error);
+        showToast("Unable to connect to server");
+
+    } finally {
+
+        addingToCart = false;
+    }
 }
 
 
-async function loadCart() {
 
-    const response = await fetch(
-        API + "/cart",
-        {
+async function updateCart() {
+
+    try {
+
+        const response = await fetch(API_BASE_URL + "/api/v1/cart", {
+            method: "GET",
             credentials: "include"
+        });
+
+        const result = await response.json();
+
+        console.log("CART LOADED:", result);
+
+        if (!result.success) {
+            showToast(result.error?.message || "Unable to load cart");
+            return;
         }
-    );
 
-    const data = await response.json();
+        const items = result.data.items || [];
+        const totalCents = result.data.totalCents || 0;
 
-    const cartDiv =
-        document.getElementById("cartItems");
+        const badge = document.getElementById("cartBadge");
 
-    cartDiv.innerHTML = "";
+        if (badge) {
+            badge.textContent = items.length;
+        }
 
-    if (!data.success) {
-        cartDiv.innerHTML = "<p>Unable to load cart</p>";
-        return;
-    }
+        const container = document.getElementById("cartItems");
 
-    const items =
-        data.data.items || [];
+        if (!container) {
+            console.error("cartItems element not found");
+            return;
+        }
 
-    if (items.length === 0) {
+        if (items.length === 0) {
 
-        cartDiv.innerHTML =
-            "<p>Your cart is empty.</p>";
+            container.innerHTML = `
+                <div style="text-align:center; padding:40px;">
+                    <h3>Your cart is empty 🛒</h3>
+                    <p>Add some products to your cart.</p>
+                </div>
+            `;
 
-        document.getElementById("cartTotal")
-            .innerText = "Total: ₹0";
+            document.getElementById("cartTotal").textContent = "₹0.00";
 
-        return;
-    }
+            return;
+        }
 
-    items.forEach(item => {
+        container.innerHTML = items.map(item => {
 
-        cartDiv.innerHTML += `
-            <div class="cart-item">
+            const price = Number(item.priceCents || 0) / 100;
+            const quantity = Number(item.quantity || 1);
 
-                Product ID: ${item.productId}
+            return `
+                <div class="cart-item">
 
-                <br>
+                    <div class="cart-item-info">
+                        <h3>${escapeHtml(item.productName || item.name || "Product")}</h3>
 
-                Quantity: ${item.quantity}
+                        <p>
+                            ₹${price.toFixed(2)}
+                            × ${quantity}
+                        </p>
+                    </div>
 
-                <br>
+                    <strong>
+                        ₹${(price * quantity).toFixed(2)}
+                    </strong>
 
-                Price:
-                ₹${(item.priceCents / 100).toFixed(2)}
+                    <button
+                        class="remove-btn"
+                        onclick="removeFromCart(${item.productId})">
+                        ✕ Remove
+                    </button>
 
+                </div>
+            `;
+
+        }).join("");
+
+        container.innerHTML += `
+            <div style="text-align:center; margin-top:15px;">
+                <button
+                    class="remove-btn"
+                    style="padding:10px 20px;"
+                    onclick="clearEntireCart()">
+                    🗑️ Clear Entire Cart
+                </button>
             </div>
         `;
-    });
 
-    document.getElementById("cartTotal")
-        .innerText =
-        "Total: ₹" +
-        (data.data.totalCents / 100).toFixed(2);
+        const totalElement =
+            document.getElementById("cartTotal");
+
+        if (totalElement) {
+            totalElement.textContent =
+                `₹${(Number(totalCents) / 100).toFixed(2)}`;
+        }
+
+    }
+    catch (error) {
+
+        console.error("CART LOAD ERROR:", error);
+        showToast("Unable to load cart. Please try again.");
+
+    }
 }
 
 
-async function checkout() {
+async function removeFromCart(productId) {
 
-    const orderResponse = await fetch(
-        API + "/orders",
-        {
-            method: "POST",
-            credentials: "include"
-        }
-    );
+    try {
 
-    const orderData =
-        await orderResponse.json();
-
-    if (!orderResponse.ok) {
-
-        alert(
-            orderData.error?.message ||
-            "Checkout failed"
+        const response = await fetch(
+            API_BASE_URL + "/api/v1/cart/" + productId,
+            {
+                method: "DELETE",
+                credentials: "include"
+            }
         );
 
+        const result = await response.json();
+
+        console.log("REMOVE FROM CART:", result);
+
+        if (!response.ok || !result.success) {
+            showToast(result.error || "Unable to remove item");
+            return;
+        }
+
+        showToast("Item removed from cart ✅");
+        await updateCart();
+
+    } catch (error) {
+
+        console.error("REMOVE CART ERROR:", error);
+        showToast("Unable to connect to server");
+
+    }
+}
+
+
+async function clearEntireCart() {
+
+    if (!confirm("Remove all items from your cart?")) {
         return;
     }
 
-    const orderId =
-        orderData.data.orderId;
+    try {
 
-    const paymentResponse = await fetch(
-        API + "/orders/" + orderId + "/confirm",
-        {
-            method: "POST",
+        const response = await fetch(API_BASE_URL + "/api/v1/cart", {
+            method: "GET",
             credentials: "include"
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            showToast("Unable to load cart");
+            return;
         }
-    );
 
-    const paymentData =
-        await paymentResponse.json();
+        const items = result.data.items || [];
 
-    if (paymentResponse.ok) {
+        for (const item of items) {
+            await fetch(
+                API_BASE_URL + "/api/v1/cart/" + item.productId,
+                {
+                    method: "DELETE",
+                    credentials: "include"
+                }
+            );
+        }
 
-        alert(
-            "Payment successful! Order #" +
-            orderId
+        showToast("Cart cleared ✅");
+        await updateCart();
+
+    } catch (error) {
+
+        console.error("CLEAR CART ERROR:", error);
+        showToast("Unable to clear cart");
+
+    }
+}
+
+
+/* =========================================================
+   CHECKOUT PLACEHOLDER
+========================================================= */
+
+function checkoutMessage() {
+
+    const status =
+        document.getElementById(
+            "checkoutStatus"
         );
 
-        loadCart();
-        loadOrders();
+    if (!cart.length) {
 
-    } else {
+        status.style.display = "block";
 
-        alert("Payment failed");
+        status.textContent =
+            "Add a product before checkout.";
+
+        return;
     }
+
+    status.style.display = "block";
+
+    status.textContent =
+        "Cart is ready. Checkout API will be connected to the verified OrderController endpoint.";
 }
 
 
-async function loadOrders() {
+/* =========================================================
+   SELLER PRODUCT CREATE
+========================================================= */
 
-    const response = await fetch(
-        API + "/orders",
-        {
-            credentials: "include"
+document
+    .getElementById("productForm")
+    .addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+        const sellerId =
+            Number(
+                document
+                    .getElementById("sellerId")
+                    .value
+            );
+
+        const name =
+            document
+                .getElementById("productName")
+                .value
+                .trim();
+
+        const description =
+            document
+                .getElementById("productDescription")
+                .value
+                .trim();
+
+        const price =
+            Number(
+                document
+                    .getElementById("productPrice")
+                    .value
+            );
+
+        const stock =
+            Number(
+                document
+                    .getElementById("productStock")
+                    .value
+            );
+
+        const message =
+            document.getElementById(
+                "productMessage"
+            );
+
+        message.textContent =
+            "Sending product to PostgreSQL...";
+
+        try {
+
+            const response =
+                await fetch(
+                    API_BASE_URL +
+                    "/api/v1/products",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        credentials: "include",
+
+                        body: JSON.stringify({
+
+                            sellerId: sellerId,
+
+                            name: name,
+
+                            description:
+                                description,
+
+                            priceCents:
+                                Math.round(
+                                    price * 100
+                                ),
+
+                            stock: stock
+
+                        })
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            console.log(
+                "CREATE PRODUCT:",
+                data
+            );
+
+            if (response.ok && data.success) {
+
+                message.textContent =
+                    "✅ Product added to PostgreSQL.";
+
+                document
+                    .getElementById("productForm")
+                    .reset();
+
+                loadProducts();
+
+            } else {
+
+                message.textContent =
+                    data.error?.message ||
+                    "Product creation failed.";
+
+            }
+
+        } catch (error) {
+
+            console.error(error);
+
+            message.textContent =
+                "Backend connection failed.";
+
         }
-    );
 
-    const data = await response.json();
-
-    const ordersDiv =
-        document.getElementById("orders");
-
-    ordersDiv.innerHTML = "";
-
-    if (!data.success) {
-        ordersDiv.innerHTML =
-            "<p>Unable to load orders</p>";
-        return;
-    }
-
-    const orders =
-        data.data.orders || [];
-
-    if (orders.length === 0) {
-
-        ordersDiv.innerHTML =
-            "<p>No orders yet.</p>";
-
-        return;
-    }
-
-    orders.forEach(order => {
-
-        ordersDiv.innerHTML += `
-            <div class="order-item">
-
-                <strong>
-                    Order #${order.id}
-                </strong>
-
-                <br>
-
-                Status:
-                ${order.status}
-
-                <br>
-
-                Total:
-                ₹${(order.totalAmountCents / 100).toFixed(2)}
-
-            </div>
-        `;
     });
-}
 
+
+/* =========================================================
+   LOGOUT
+========================================================= */
 
 function logout() {
 
-    location.reload();
+    currentUser = null;
+
+    localStorage.removeItem(
+        "hariMartUser"
+    );
+
+    cart = [];
+
+    document
+        .getElementById("mainApp")
+        .style.display = "none";
+
+    document
+        .getElementById("authScreen")
+        .style.display = "flex";
+
+    document
+        .getElementById("loginPassword")
+        .value = "";
+
+    showAuth("login");
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+/* =========================================================
+   STARTUP
+========================================================= */
+
+console.log(
+    "HariMart frontend loaded."
+);
+
+console.log(
+    "Backend:",
+    API_BASE_URL
+);
+/* =========================================================
+   PRODUCT REVIEWS
+========================================================= */
+
+let currentReviewProductId = null;
+let selectedRating = 0;
+
+
+/* OPEN REVIEW MODAL */
+
+function openReviewModal(productId) {
+
+    currentReviewProductId = productId;
+    selectedRating = 0;
+
+    const product = products.find(
+        p => Number(p.id) === Number(productId)
+    );
+
+    document.getElementById("reviewProductName").textContent =
+        product ? product.name : "Product Reviews";
+
+    document.getElementById("reviewComment").value = "";
+
+    updateStarDisplay();
+
+    document.getElementById("reviewModal").style.display = "flex";
+
+    loadReviews(productId);
+}
+
+
+/* CLOSE REVIEW MODAL */
+
+function closeReviewModal() {
+
+    document.getElementById("reviewModal").style.display = "none";
+
+    currentReviewProductId = null;
+    selectedRating = 0;
+}
+
+
+/* LOAD REVIEWS FROM BACKEND */
+
+async function loadReviews(productId) {
+
+    const reviewsList =
+        document.getElementById("reviewsList");
+
+    const reviewSummary =
+        document.getElementById("reviewSummary");
+
+    reviewsList.innerHTML =
+        "<p>Loading reviews...</p>";
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL +
+            "/api/v1/reviews/" +
+            productId
+        );
+
+        const data = await response.json();
+
+        console.log("REVIEWS:", data);
+
+        if (!response.ok || !data.success) {
+
+            reviewsList.innerHTML =
+                "<p>Unable to load reviews.</p>";
+
+            return;
+        }
+
+        const reviews =
+            data.data?.reviews || [];
+
+        if (reviews.length === 0) {
+
+            reviewSummary.innerHTML =
+                "⭐ No reviews yet";
+
+            reviewsList.innerHTML =
+                "<p>No reviews yet. Be the first to review!</p>";
+
+            return;
+        }
+
+
+        /* CALCULATE AVERAGE RATING */
+
+        const totalRating =
+            reviews.reduce(
+                (sum, review) =>
+                    sum + Number(review.rating),
+                0
+            );
+
+        const averageRating =
+            totalRating / reviews.length;
+
+
+        reviewSummary.innerHTML =
+            "⭐ " +
+            averageRating.toFixed(1) +
+            " / 5 (" +
+            reviews.length +
+            " review" +
+            (reviews.length > 1 ? "s" : "") +
+            ")";
+
+
+        /* DISPLAY REVIEWS */
+
+        reviewsList.innerHTML =
+            reviews.map(review => {
+
+                const stars =
+                    "★".repeat(Number(review.rating)) +
+                    "☆".repeat(5 - Number(review.rating));
+
+                return `
+                    <div class="single-review">
+
+                        <div class="review-stars">
+                            ${stars}
+                        </div>
+
+                        <p>
+                            ${escapeHtml(
+                                review.comment || "No comment"
+                            )}
+                        </p>
+
+                    </div>
+                `;
+
+            }).join("");
+
+    } catch (error) {
+
+        console.error(
+            "LOAD REVIEWS ERROR:",
+            error
+        );
+
+        reviewsList.innerHTML =
+            "<p>Backend connection failed.</p>";
+    }
+}
+
+
+/* STAR CLICK */
+
+document.addEventListener(
+    "click",
+    function(event) {
+
+        const star =
+            event.target.closest(
+                "#starRating span"
+            );
+
+        if (!star) {
+            return;
+        }
+
+        selectedRating =
+            Number(
+                star.dataset.rating
+            );
+
+        updateStarDisplay();
+    }
+);
+
+
+/* UPDATE STAR DISPLAY */
+
+function updateStarDisplay() {
+
+    const stars =
+        document.querySelectorAll(
+            "#starRating span"
+        );
+
+    stars.forEach(star => {
+
+        const rating =
+            Number(
+                star.dataset.rating
+            );
+
+        star.style.opacity =
+            rating <= selectedRating
+                ? "1"
+                : "0.3";
+    });
+}
+
+
+/* SUBMIT REVIEW */
+
+async function submitReview() {
+
+    if (!currentReviewProductId) {
+
+        alert(
+            "Please select a product first."
+        );
+
+        return;
+    }
+
+
+    if (selectedRating === 0) {
+
+        alert(
+            "Please select a star rating."
+        );
+
+        return;
+    }
+
+
+    const comment =
+        document
+            .getElementById("reviewComment")
+            .value
+            .trim();
+
+
+    try {
+
+        const response = await fetch(
+            API_BASE_URL +
+            "/api/v1/reviews",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                credentials: "include",
+
+                body: JSON.stringify({
+
+                    productId:
+                        Number(
+                            currentReviewProductId
+                        ),
+
+                    rating:
+                        selectedRating,
+
+                    comment:
+                        comment
+                })
+            }
+        );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "SUBMIT REVIEW:",
+            data
+        );
+
+
+        if (!response.ok || !data.success) {
+
+            alert(
+                data.error?.message ||
+                "Review submission failed."
+            );
+
+            return;
+        }
+
+
+        alert(
+            "⭐ Review added successfully!"
+        );
+
+
+        document
+            .getElementById("reviewComment")
+            .value = "";
+
+        selectedRating = 0;
+
+        updateStarDisplay();
+
+        await loadReviews(
+            currentReviewProductId
+        );
+
+    } catch (error) {
+
+        console.error(
+            "SUBMIT REVIEW ERROR:",
+            error
+        );
+
+        alert(
+            "Backend connection failed."
+        );
+    }
 }
 
 </script>
+<!-- ================= REVIEW MODAL ================= -->
+<div id="reviewModal" class="review-modal">
+    <div class="review-modal-content">
 
+        <button class="review-close-btn" onclick="closeReviewModal()">
+            &times;
+        </button>
+
+        <h2 id="reviewProductName">Product Reviews</h2>
+
+        <div id="reviewSummary" class="review-summary">
+            ⭐ No reviews yet
+        </div>
+
+        <div id="reviewsList" class="reviews-list">
+            <p>Loading reviews...</p>
+        </div>
+
+        <hr>
+
+        <div class="write-review-section">
+
+            <h3>Write a Review</h3>
+
+            <div class="star-rating" id="starRating">
+                <span data-rating="1">★</span>
+                <span data-rating="2">★</span>
+                <span data-rating="3">★</span>
+                <span data-rating="4">★</span>
+                <span data-rating="5">★</span>
+            </div>
+
+            <textarea
+                id="reviewComment"
+                placeholder="Write your review..."
+                rows="4"
+            ></textarea>
+
+            <button
+                type="button"
+                class="submit-review-btn"
+                onclick="submitReview()"
+            >
+                Submit Review
+            </button>
+
+        </div>
+
+    </div>
+</div>
 </body>
 </html>
