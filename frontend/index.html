@@ -1287,6 +1287,8 @@ function showToast(msg, type = '') {
 async function apiFetch(url, options = {}) {
     const fullUrl = API + url;
     const method = (options.method || 'GET').toUpperCase();
+    // Skip auth URLs to avoid infinite loops
+    const isAuthUrl = url.includes('/auth/');
     try {
         const res = await fetch(fullUrl, options);
         let data;
@@ -1294,6 +1296,16 @@ async function apiFetch(url, options = {}) {
         if (!res.ok) {
             const errMsg = data?.error?.message || data?.message || res.statusText;
             console.error(`[HariMart] ${method} ${fullUrl} → HTTP ${res.status}:`, errMsg, data);
+            // If server says session is invalid and a user was logged in, force re-login
+            if (res.status === 401 && currentUser && !isAuthUrl) {
+                console.warn('[HariMart] Session expired or invalid — returning to login');
+                currentUser = null;
+                localStorage.removeItem('hariMartUser');
+                document.getElementById('mainApp').style.display = 'none';
+                document.getElementById('authScreen').style.display = 'flex';
+                showAuth('login');
+                showToast('Your session has expired. Please log in again.', 'error');
+            }
         }
         return { ok: res.ok, status: res.status, data };
     } catch (networkErr) {
@@ -2094,8 +2106,39 @@ function escapeHtml(v) {
 
 /* =========================================================
    STARTUP
+   On page load, check if there is a saved user in localStorage.
+   If so, verify the session is still alive with the backend
+   before entering the app — avoids stale session after a
+   backend restart.
 ========================================================= */
-console.log('HariMart frontend loaded. API base: same-origin (relative URLs). Backend must be running on port 8080.');
+(async function init() {
+    console.log('HariMart frontend loaded. API base: same-origin (relative URLs). Backend must be running on port 8080.');
+
+    const saved = localStorage.getItem('hariMartUser');
+    if (!saved) return; // No saved user — stay on auth screen
+
+    let savedUser;
+    try { savedUser = JSON.parse(saved); } catch(e) { localStorage.removeItem('hariMartUser'); return; }
+
+    // Verify the session is still valid on the backend
+    const result = await fetch('/api/v1/auth/session', { credentials: 'include' });
+    if (result.ok) {
+        let data;
+        try { data = await result.json(); } catch(e) { data = null; }
+        if (data?.success && data?.data) {
+            // Session is live — use the fresh data from server
+            currentUser = data.data;
+            localStorage.setItem('hariMartUser', JSON.stringify(currentUser));
+            enterApp();
+            return;
+        }
+    }
+
+    // Session is dead (backend restarted, expired, etc.) — clear and show login
+    console.log('[HariMart] Saved session is no longer valid — showing login');
+    localStorage.removeItem('hariMartUser');
+    showAuth('login');
+})();
 </script>
 </body>
 </html>
