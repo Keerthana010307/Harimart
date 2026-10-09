@@ -36,7 +36,7 @@ RUN git clone --depth 1 --branch v1.9.5 https://github.com/drogonframework/drogo
         -DUSE_POSTGRESQL=ON \
         -DUSE_MYSQL=OFF \
         -DUSE_SQLITE3=OFF \
-    && cmake --build build -j$(nproc) \
+    && cmake --build build -j1 \
     && cmake --install build
 
 WORKDIR /app
@@ -84,7 +84,7 @@ CMEOF
 
 # Build HariMart
 RUN cmake -B build -DCMAKE_BUILD_TYPE=Release \
-    && cmake --build build -j$(nproc)
+    && cmake --build build -j2
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────────────
 FROM ubuntu:22.04
