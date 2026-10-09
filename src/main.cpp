@@ -6,19 +6,32 @@ int main()
 {
     try
     {
-        std::cout << "STEP 1: Program started" << std::endl;
+        std::cout << "HariMart: Starting server..." << std::endl;
 
         drogon::app().loadConfigFile("config.json");
 
-        // Enable CORS for frontend
+        // CORS middleware - supports both same-origin and cross-origin
         drogon::app().registerPreSendingAdvice(
             [](const drogon::HttpRequestPtr& req,
                const drogon::HttpResponsePtr& resp)
             {
-                resp->addHeader(
-                    "Access-Control-Allow-Origin",
-                    "http://127.0.0.1:5500"
-                );
+                auto origin = req->getHeader("Origin");
+
+                // Allow same-origin (Drogon serves frontend) and dev origins
+                if (origin.empty() ||
+                    origin == "http://127.0.0.1:8080" ||
+                    origin == "http://localhost:8080" ||
+                    origin == "http://127.0.0.1:5500" ||
+                    origin == "http://localhost:5500")
+                {
+                    if (!origin.empty())
+                    {
+                        resp->addHeader(
+                            "Access-Control-Allow-Origin",
+                            origin
+                        );
+                    }
+                }
 
                 resp->addHeader(
                     "Access-Control-Allow-Credentials",
@@ -42,52 +55,57 @@ int main()
             -> drogon::HttpResponsePtr
             {
                 if (req->method() == drogon::Options)
-{
-    auto response =
-        drogon::HttpResponse::newHttpResponse();
+                {
+                    auto response =
+                        drogon::HttpResponse::newHttpResponse();
 
-    response->setStatusCode(drogon::k200OK);
+                    response->setStatusCode(drogon::k200OK);
 
-    response->addHeader(
-        "Access-Control-Allow-Origin",
-        "http://127.0.0.1:5500"
-    );
+                    auto origin = req->getHeader("Origin");
 
-    response->addHeader(
-        "Access-Control-Allow-Credentials",
-        "true"
-    );
+                    if (!origin.empty())
+                    {
+                        response->addHeader(
+                            "Access-Control-Allow-Origin",
+                            origin
+                        );
+                    }
 
-    response->addHeader(
-        "Access-Control-Allow-Headers",
-        "Content-Type"
-    );
+                    response->addHeader(
+                        "Access-Control-Allow-Credentials",
+                        "true"
+                    );
 
-    response->addHeader(
-        "Access-Control-Allow-Methods",
-        "GET, POST, PUT, DELETE, OPTIONS"
-    );
+                    response->addHeader(
+                        "Access-Control-Allow-Headers",
+                        "Content-Type"
+                    );
 
-    return response;
-}
+                    response->addHeader(
+                        "Access-Control-Allow-Methods",
+                        "GET, POST, PUT, DELETE, OPTIONS"
+                    );
+
+                    return response;
+                }
 
                 return nullptr;
             });
 
-        std::cout << "STEP 2: Config loaded" << std::endl;
+        std::cout << "HariMart: Config loaded, starting on port 8080" << std::endl;
 
         drogon::app().run();
 
-        std::cout << "STEP 3: Server stopped normally" << std::endl;
+        std::cout << "HariMart: Server stopped" << std::endl;
     }
     catch (const std::exception& e)
     {
-        std::cerr << "ERROR: " << e.what() << std::endl;
+        std::cerr << "HariMart ERROR: " << e.what() << std::endl;
         return 1;
     }
     catch (...)
     {
-        std::cerr << "UNKNOWN ERROR" << std::endl;
+        std::cerr << "HariMart: Unknown error" << std::endl;
         return 1;
     }
 

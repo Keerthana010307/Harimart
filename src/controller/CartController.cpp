@@ -2,12 +2,9 @@
 #include "../service/CartService.h"
 #include "../repository/UserRepository.h"
 
-#include <nlohmann/json.hpp>
 #include <json/json.h>
 #include <string>
 #include <functional>
-
-using json = nlohmann::json;
 
 void CartController::addToCart(
     const drogon::HttpRequestPtr& req,
@@ -19,12 +16,9 @@ void CartController::addToCart(
     {
         Json::Value responseJson;
         responseJson["success"] = false;
-        responseJson["error"] = "Invalid JSON";
+        responseJson["error"]["message"] = "Invalid JSON";
         responseJson["data"] = Json::nullValue;
-
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k400BadRequest);
         callback(response);
         return;
@@ -35,13 +29,9 @@ void CartController::addToCart(
     {
         Json::Value responseJson;
         responseJson["success"] = false;
-        responseJson["error"] =
-            "productId and quantity are required";
+        responseJson["error"]["message"] = "productId and quantity are required";
         responseJson["data"] = Json::nullValue;
-
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k400BadRequest);
         callback(response);
         return;
@@ -51,64 +41,55 @@ void CartController::addToCart(
     {
         Json::Value responseJson;
         responseJson["success"] = false;
-        responseJson["error"] = "Login required";
+        responseJson["error"]["message"] = "Login required";
         responseJson["data"] = Json::nullValue;
-
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k401Unauthorized);
         callback(response);
         return;
     }
 
-    std::string email =
-        req->session()->get<std::string>("user_email");
-
+    std::string email = req->session()->get<std::string>("user_email");
     UserRepository userRepository;
-
-    auto userIdOptional =
-        userRepository.findUserIdByEmail(email);
+    auto userIdOptional = userRepository.findUserIdByEmail(email);
 
     if (!userIdOptional.has_value())
     {
         Json::Value responseJson;
         responseJson["success"] = false;
-        responseJson["error"] = "User not found";
+        responseJson["error"]["message"] = "User not found";
         responseJson["data"] = Json::nullValue;
-
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k401Unauthorized);
         callback(response);
         return;
     }
 
     long long userId = userIdOptional.value();
+    long long productId = (*jsonBody)["productId"].asInt64();
+    int quantity = (*jsonBody)["quantity"].asInt();
 
-    long long productId =
-        (*jsonBody)["productId"].asInt64();
-
-    int quantity =
-        (*jsonBody)["quantity"].asInt();
-
-    CartService service;
-
-    if (!service.addToCart(
-            userId,
-            productId,
-            quantity))
+    if (quantity <= 0)
     {
         Json::Value responseJson;
         responseJson["success"] = false;
-        responseJson["error"] =
-            "Unable to add product to cart";
+        responseJson["error"]["message"] = "Quantity must be positive";
         responseJson["data"] = Json::nullValue;
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
+        response->setStatusCode(drogon::k400BadRequest);
+        callback(response);
+        return;
+    }
 
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
+    CartService service;
 
+    if (!service.addToCart(userId, productId, quantity))
+    {
+        Json::Value responseJson;
+        responseJson["success"] = false;
+        responseJson["error"]["message"] = "Unable to add product to cart";
+        responseJson["data"] = Json::nullValue;
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k400BadRequest);
         callback(response);
         return;
@@ -117,15 +98,12 @@ void CartController::addToCart(
     Json::Value responseJson;
     responseJson["success"] = true;
     responseJson["error"] = Json::nullValue;
-    responseJson["data"]["message"] =
-        "Product added to cart successfully";
-
-    auto response =
-        drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+    responseJson["data"]["message"] = "Product added to cart successfully";
+    auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
     response->setStatusCode(drogon::k201Created);
     callback(response);
 }
+
 void CartController::getCart(
     const drogon::HttpRequestPtr& req,
     std::function<void(const drogon::HttpResponsePtr&)>&& callback)
@@ -136,22 +114,15 @@ void CartController::getCart(
         responseJson["success"] = false;
         responseJson["error"]["message"] = "Login required";
         responseJson["data"] = Json::nullValue;
-
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k401Unauthorized);
         callback(response);
         return;
     }
 
-    std::string email =
-        req->session()->get<std::string>("user_email");
-
+    std::string email = req->session()->get<std::string>("user_email");
     UserRepository userRepository;
-
-    auto userIdOptional =
-        userRepository.findUserIdByEmail(email);
+    auto userIdOptional = userRepository.findUserIdByEmail(email);
 
     if (!userIdOptional.has_value())
     {
@@ -159,10 +130,7 @@ void CartController::getCart(
         responseJson["success"] = false;
         responseJson["error"]["message"] = "User not found";
         responseJson["data"] = Json::nullValue;
-
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k401Unauthorized);
         callback(response);
         return;
@@ -182,11 +150,10 @@ void CartController::getCart(
         itemJson["id"] = Json::Int64(item.id);
         itemJson["userId"] = Json::Int64(item.userId);
         itemJson["productId"] = Json::Int64(item.productId);
+        itemJson["productName"] = item.productName;
         itemJson["quantity"] = item.quantity;
         itemJson["priceCents"] = Json::Int64(item.priceCents);
-
         totalCents += item.priceCents * item.quantity;
-
         itemsJson.append(itemJson);
     }
 
@@ -194,15 +161,13 @@ void CartController::getCart(
     responseJson["success"] = true;
     responseJson["error"] = Json::nullValue;
     responseJson["data"]["items"] = itemsJson;
-    responseJson["data"]["totalCents"] =
-        Json::Int64(totalCents);
+    responseJson["data"]["totalCents"] = Json::Int64(totalCents);
 
-    auto response =
-        drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+    auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
     response->setStatusCode(drogon::k200OK);
     callback(response);
 }
+
 void CartController::updateCart(
     const drogon::HttpRequestPtr& req,
     std::function<void(const drogon::HttpResponsePtr&)>&& callback,
@@ -214,12 +179,9 @@ void CartController::updateCart(
     {
         Json::Value responseJson;
         responseJson["success"] = false;
-        responseJson["error"] = "Invalid JSON";
+        responseJson["error"]["message"] = "Invalid JSON";
         responseJson["data"] = Json::nullValue;
-
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k400BadRequest);
         callback(response);
         return;
@@ -229,13 +191,9 @@ void CartController::updateCart(
     {
         Json::Value responseJson;
         responseJson["success"] = false;
-        responseJson["error"] =
-            "quantity is required";
+        responseJson["error"]["message"] = "quantity is required";
         responseJson["data"] = Json::nullValue;
-
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k400BadRequest);
         callback(response);
         return;
@@ -245,64 +203,43 @@ void CartController::updateCart(
     {
         Json::Value responseJson;
         responseJson["success"] = false;
-        responseJson["error"] = "Login required";
+        responseJson["error"]["message"] = "Login required";
         responseJson["data"] = Json::nullValue;
-
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k401Unauthorized);
         callback(response);
         return;
     }
 
-    std::string email =
-        req->session()->get<std::string>("user_email");
-
+    std::string email = req->session()->get<std::string>("user_email");
     UserRepository userRepository;
-
-    auto userIdOptional =
-        userRepository.findUserIdByEmail(email);
+    auto userIdOptional = userRepository.findUserIdByEmail(email);
 
     if (!userIdOptional.has_value())
     {
         Json::Value responseJson;
         responseJson["success"] = false;
-        responseJson["error"] = "User not found";
+        responseJson["error"]["message"] = "User not found";
         responseJson["data"] = Json::nullValue;
-
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k401Unauthorized);
         callback(response);
         return;
     }
 
-    long long userId =
-        userIdOptional.value();
-
+    long long userId = userIdOptional.value();
     long long productId = id;
-
-    int quantity =
-        (*jsonBody)["quantity"].asInt();
+    int quantity = (*jsonBody)["quantity"].asInt();
 
     CartService service;
 
-    if (!service.updateCart(
-            userId,
-            productId,
-            quantity))
+    if (!service.updateCart(userId, productId, quantity))
     {
         Json::Value responseJson;
         responseJson["success"] = false;
-        responseJson["error"] =
-            "Unable to update cart";
+        responseJson["error"]["message"] = "Unable to update cart";
         responseJson["data"] = Json::nullValue;
-
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k400BadRequest);
         callback(response);
         return;
@@ -311,18 +248,13 @@ void CartController::updateCart(
     Json::Value responseJson;
     responseJson["success"] = true;
     responseJson["error"] = Json::nullValue;
-    responseJson["data"]["message"] =
-        "Cart updated successfully";
-
-    auto response =
-        drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+    responseJson["data"]["message"] = "Cart updated successfully";
+    auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
     response->setStatusCode(drogon::k200OK);
     callback(response);
 }
+
 void CartController::removeFromCart(
-
-
     const drogon::HttpRequestPtr& req,
     std::function<void(const drogon::HttpResponsePtr&)>&& callback,
     long long id)
@@ -331,30 +263,24 @@ void CartController::removeFromCart(
     {
         Json::Value responseJson;
         responseJson["success"] = false;
-        responseJson["error"] = "Login required";
+        responseJson["error"]["message"] = "Login required";
         responseJson["data"] = Json::nullValue;
-
         auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k401Unauthorized);
         callback(response);
         return;
     }
 
-    std::string email =
-        req->session()->get<std::string>("user_email");
-
+    std::string email = req->session()->get<std::string>("user_email");
     UserRepository userRepository;
-
-    auto userIdOptional =
-        userRepository.findUserIdByEmail(email);
+    auto userIdOptional = userRepository.findUserIdByEmail(email);
 
     if (!userIdOptional.has_value())
     {
         Json::Value responseJson;
         responseJson["success"] = false;
-        responseJson["error"] = "User not found";
+        responseJson["error"]["message"] = "User not found";
         responseJson["data"] = Json::nullValue;
-
         auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k401Unauthorized);
         callback(response);
@@ -370,9 +296,8 @@ void CartController::removeFromCart(
     {
         Json::Value responseJson;
         responseJson["success"] = false;
-        responseJson["error"] = "Unable to remove product from cart";
+        responseJson["error"]["message"] = "Unable to remove product from cart";
         responseJson["data"] = Json::nullValue;
-
         auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k400BadRequest);
         callback(response);
@@ -383,8 +308,7 @@ void CartController::removeFromCart(
     responseJson["success"] = true;
     responseJson["error"] = Json::nullValue;
     responseJson["data"]["message"] = "Product removed from cart successfully";
-
     auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
     response->setStatusCode(drogon::k200OK);
     callback(response);
-}
+}

@@ -33,7 +33,6 @@ public:
         const std::string& status
     );
 
-    bool confirmOrder(long long orderId);
     
     bool isOrderOwnedByBuyer(
     long long orderId,

@@ -62,11 +62,12 @@ std::vector<CartItem> CartRepository::getCartItems(
     auto dbClient = Database::getClient();
 
     auto result = dbClient->execSqlSync(
-        "SELECT c.id, c.user_id, c.product_id, c.quantity, p.price_cents "
-"FROM cart_items c "
-"JOIN products p ON c.product_id = p.id "
-        "WHERE user_id = $1 "
-        "ORDER BY id",
+        "SELECT c.id, c.user_id, c.product_id, c.quantity, "
+        "p.price_cents, p.name AS product_name "
+        "FROM cart_items c "
+        "JOIN products p ON c.product_id = p.id "
+        "WHERE c.user_id = $1 "
+        "ORDER BY c.id",
         userId
     );
 
@@ -75,27 +76,27 @@ std::vector<CartItem> CartRepository::getCartItems(
     for (const auto& row : result)
     {
         CartItem item;
-
         item.id = row["id"].as<long long>();
         item.userId = row["user_id"].as<long long>();
         item.productId = row["product_id"].as<long long>();
         item.quantity = row["quantity"].as<int>();
         item.priceCents = row["price_cents"].as<long long>();
-
+        item.productName = row["product_name"].as<std::string>();
         items.push_back(item);
     }
 
     return items;
 }
+
 bool CartRepository::clearCart(long long userId)
 {
     auto dbClient = Database::getClient();
 
-    auto result = dbClient->execSqlSync(
+    dbClient->execSqlSync(
         "DELETE FROM cart_items "
         "WHERE user_id = $1",
         userId
     );
 
-    return result.affectedRows() > 0;
+    return true;
 }

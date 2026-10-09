@@ -7,7 +7,6 @@ void ReviewController::addReview(
     std::function<void(const drogon::HttpResponsePtr&)>&& callback)
 {
     auto json = req->getJsonObject();
-
     Json::Value responseJson;
 
     if (!json)
@@ -15,98 +14,64 @@ void ReviewController::addReview(
         responseJson["success"] = false;
         responseJson["data"] = Json::nullValue;
         responseJson["error"]["message"] = "Invalid JSON";
-
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k400BadRequest);
         callback(response);
         return;
     }
 
- if (!json->isMember("productId") ||
-    !json->isMember("rating"))
+    if (!json->isMember("productId") || !json->isMember("rating"))
     {
         responseJson["success"] = false;
         responseJson["data"] = Json::nullValue;
-        responseJson["error"]["message"] =
-            "productId, userId and rating are required";
-
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+        responseJson["error"]["message"] = "productId and rating are required";
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k400BadRequest);
         callback(response);
         return;
     }
 
-    long long productId = (*json)["productId"].asInt64();
-        if (!req->session()->find("user_email"))
-{
-    Json::Value responseJson;
-    responseJson["success"] = false;
-    responseJson["data"] = Json::nullValue;
-    responseJson["error"]["message"] = "Login required";
-
-    auto response =
-        drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
-    response->setStatusCode(drogon::k401Unauthorized);
-    callback(response);
-    return;
-}
-
-std::string email =
-    req->session()->get<std::string>("user_email");
-    UserRepository userRepository;
-
-auto userIdOptional =
-    userRepository.findUserIdByEmail(email);
-
-if (!userIdOptional.has_value())
-{
-    Json::Value responseJson;
-    responseJson["success"] = false;
-    responseJson["data"] = Json::nullValue;
-    responseJson["error"]["message"] = "User not found";
-
-    auto response =
-        drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
-    response->setStatusCode(drogon::k401Unauthorized);
-    callback(response);
-    return;
-}
-
-long long userId = userIdOptional.value();
-    int rating = (*json)["rating"].asInt();
-
-    std::string comment = "";
-
-    if (json->isMember("comment"))
+    if (!req->session()->find("user_email"))
     {
-        comment = (*json)["comment"].asString();
+        responseJson["success"] = false;
+        responseJson["data"] = Json::nullValue;
+        responseJson["error"]["message"] = "Login required to submit a review";
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
+        response->setStatusCode(drogon::k401Unauthorized);
+        callback(response);
+        return;
     }
+
+    std::string email = req->session()->get<std::string>("user_email");
+    UserRepository userRepository;
+    auto userIdOptional = userRepository.findUserIdByEmail(email);
+
+    if (!userIdOptional.has_value())
+    {
+        responseJson["success"] = false;
+        responseJson["data"] = Json::nullValue;
+        responseJson["error"]["message"] = "User not found";
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
+        response->setStatusCode(drogon::k401Unauthorized);
+        callback(response);
+        return;
+    }
+
+    long long userId = userIdOptional.value();
+    long long productId = (*json)["productId"].asInt64();
+    int rating = (*json)["rating"].asInt();
+    std::string comment = json->isMember("comment")
+        ? (*json)["comment"].asString() : "";
 
     ReviewService service;
+    auto result = service.addReview(productId, userId, rating, comment);
 
-    bool success = service.addReview(
-        productId,
-        userId,
-        rating,
-        comment
-    );
-
-    if (!success)
+    if (!result.success)
     {
         responseJson["success"] = false;
         responseJson["data"] = Json::nullValue;
-        responseJson["error"]["message"] =
-            "Invalid rating or review already exists";
-
-        auto response =
-            drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+        responseJson["error"]["message"] = result.errorMessage;
+        auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
         response->setStatusCode(drogon::k400BadRequest);
         callback(response);
         return;
@@ -115,10 +80,7 @@ long long userId = userIdOptional.value();
     responseJson["success"] = true;
     responseJson["data"]["message"] = "Review added successfully";
     responseJson["error"] = Json::nullValue;
-
-    auto response =
-        drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+    auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
     response->setStatusCode(drogon::k201Created);
     callback(response);
 }
@@ -129,7 +91,6 @@ void ReviewController::getProductReviews(
     long long productId)
 {
     ReviewService service;
-
     auto reviews = service.getProductReviews(productId);
 
     Json::Value reviewList(Json::arrayValue);
@@ -137,25 +98,20 @@ void ReviewController::getProductReviews(
     for (const auto& review : reviews)
     {
         Json::Value item;
-
         item["id"] = Json::Int64(review.id);
         item["productId"] = Json::Int64(review.productId);
         item["userId"] = Json::Int64(review.userId);
         item["rating"] = review.rating;
         item["comment"] = review.comment;
-
         reviewList.append(item);
     }
 
     Json::Value responseJson;
-
     responseJson["success"] = true;
     responseJson["data"]["reviews"] = reviewList;
     responseJson["error"] = Json::nullValue;
 
-    auto response =
-        drogon::HttpResponse::newHttpJsonResponse(responseJson);
-
+    auto response = drogon::HttpResponse::newHttpJsonResponse(responseJson);
     response->setStatusCode(drogon::k200OK);
     callback(response);
 }

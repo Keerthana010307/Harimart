@@ -4,10 +4,16 @@
 #include <vector>
 #include <string>
 
+struct ReviewResult
+{
+    bool success;
+    std::string errorMessage;
+};
+
 class ReviewService
 {
 public:
-    bool addReview(
+    ReviewResult addReview(
         long long productId,
         long long userId,
         int rating,

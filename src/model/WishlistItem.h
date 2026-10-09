@@ -2,12 +2,13 @@
 
 #include <string>
 
-struct CartItem
+struct WishlistItem
 {
     long long id;
     long long userId;
     long long productId;
     std::string productName;
-    int quantity;
     long long priceCents;
+    std::string imageUrl;
+    std::string category;
 };
