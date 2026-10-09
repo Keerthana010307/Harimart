@@ -1,0 +1,15 @@
+build/
+.git/
+.kiro/
+*.exe
+*.dll
+*.obj
+*.o
+*.lib
+admin_hash.exe
+admin_hash.cpp
+libsodium.dll
+cookies.txt
+product.json
+product-update.json
+seller.json

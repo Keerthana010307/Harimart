@@ -14,7 +14,6 @@ find_package(nlohmann_json CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_library(SODIUM_LIBRARY
     NAMES sodium libsodium
-    PATHS "C:/vcpkg/installed/x64-windows/lib"
     REQUIRED
 )
 
