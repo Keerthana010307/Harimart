@@ -3,7 +3,6 @@ FROM ubuntu:22.04 AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install compiler, cmake, and ALL Drogon + app dependencies via apt
 RUN apt-get update && apt-get install -y \
     build-essential \
     gcc \
@@ -25,7 +24,7 @@ RUN apt-get update && apt-get install -y \
     libfmt-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Build and install Drogon from source (apt version is too old)
+# Build Drogon from source
 RUN git clone --depth 1 --branch v1.9.5 https://github.com/drogonframework/drogon.git /drogon \
     && cd /drogon \
     && git submodule update --init \
@@ -42,45 +41,8 @@ RUN git clone --depth 1 --branch v1.9.5 https://github.com/drogonframework/drogo
 WORKDIR /app
 COPY . .
 
-# Write a Linux-compatible CMakeLists.txt (no Windows vcpkg path for sodium)
-RUN cat > CMakeLists.txt << 'CMEOF'
-cmake_minimum_required(VERSION 3.25)
-
-project(HariMart
-    VERSION 0.1.0
-    LANGUAGES CXX
-)
-
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-find_package(Drogon CONFIG REQUIRED)
-find_package(nlohmann_json REQUIRED)
-find_package(spdlog REQUIRED)
-find_library(SODIUM_LIBRARY NAMES sodium libsodium REQUIRED)
-
-file(GLOB_RECURSE SOURCES
-    "${CMAKE_SOURCE_DIR}/src/*.cpp"
-)
-
-add_executable(HariMart ${SOURCES})
-
-target_include_directories(HariMart
-    PRIVATE
-        ${CMAKE_SOURCE_DIR}/src
-)
-
-target_link_libraries(HariMart
-    PRIVATE
-        Drogon::Drogon
-        nlohmann_json::nlohmann_json
-        spdlog::spdlog
-        ${SODIUM_LIBRARY}
-)
-
-target_compile_options(HariMart PRIVATE -Wall -Wextra -Wpedantic)
-CMEOF
+# Use the Linux-specific CMakeLists (avoids Windows CRLF heredoc issues)
+RUN cp CMakeLists.linux.txt CMakeLists.txt
 
 # Build HariMart
 RUN cmake -B build -DCMAKE_BUILD_TYPE=Release \
