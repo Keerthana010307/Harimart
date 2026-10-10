@@ -48,58 +48,85 @@ else
     DB_PASS="${DB_PASS:-}"
 fi
 
-echo "HariMart: Parsed DB config:"
+echo "HariMart: Parsed config:"
 echo "HariMart:   HOST = $DB_HOST"
 echo "HariMart:   PORT = $DB_PORT"
 echo "HariMart:   NAME = $DB_NAME"
 echo "HariMart:   USER = $DB_USER"
 echo "HariMart:   App PORT = $PORT"
 
-# ── Set SSL + password for libpq ────────────────────────────
+# ── Set password for libpq ──────────────────────────────────
 export PGPASSWORD="$DB_PASS"
-export PGSSLMODE=require
 
-# ── Test raw TCP connectivity ───────────────────────────────
-echo "HariMart: Testing TCP connectivity to $DB_HOST:$DB_PORT ..."
-if command -v timeout > /dev/null 2>&1; then
-    timeout 5 sh -c "echo > /dev/tcp/$DB_HOST/$DB_PORT" 2>/dev/null && echo "HariMart: TCP OK" || echo "HariMart: TCP FAILED (may be normal)"
+# ── Try connecting: internal first, then external ───────────
+# On Render, Docker containers sometimes can't resolve the
+# internal hostname (dpg-xxx-a).  If internal fails, we
+# automatically try the external hostname which adds the
+# region suffix (e.g. dpg-xxx-a.oregon-postgres.render.com).
+echo "HariMart: Testing DB connectivity..."
+
+DB_CONNECTED=false
+
+# Attempt 1: Internal hostname (no SSL)
+echo "HariMart: Trying internal host: $DB_HOST:$DB_PORT ..."
+if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1" > /dev/null 2>&1; then
+    echo "HariMart: ✓ Internal connection OK"
+    DB_CONNECTED=true
+    SSLMODE=""
+else
+    echo "HariMart: ✗ Internal connection failed"
+
+    # Attempt 2: Internal hostname + SSL
+    echo "HariMart: Trying internal host with SSL..."
+    export PGSSLMODE=require
+    if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1" > /dev/null 2>&1; then
+        echo "HariMart: ✓ Internal + SSL connection OK"
+        DB_CONNECTED=true
+        SSLMODE="require"
+    else
+        echo "HariMart: ✗ Internal + SSL failed"
+
+        # Attempt 3: External hostname (try common Render regions)
+        for REGION in oregon ohio singapore frankfurt; do
+            EXT_HOST="${DB_HOST}.${REGION}-postgres.render.com"
+            echo "HariMart: Trying external host: $EXT_HOST ..."
+            if psql -h "$EXT_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1" > /dev/null 2>&1; then
+                echo "HariMart: ✓ External connection OK ($REGION)"
+                DB_HOST="$EXT_HOST"
+                DB_CONNECTED=true
+                SSLMODE="require"
+                break
+            fi
+        done
+    fi
 fi
 
-# ── DNS lookup ──────────────────────────────────────────────
-echo "HariMart: Resolving $DB_HOST ..."
-getent hosts "$DB_HOST" 2>/dev/null || nslookup "$DB_HOST" 2>/dev/null || echo "HariMart: DNS lookup tool not available"
+if [ "$DB_CONNECTED" = "false" ]; then
+    echo "HariMart: ✗ ALL connection attempts failed!"
+    echo "HariMart: Trying DNS resolution..."
+    getent hosts "$DB_HOST" 2>/dev/null || echo "HariMart: DNS failed for $DB_HOST"
+    echo "HariMart: Will proceed anyway — Drogon will retry..."
+fi
 
-# ── Wait for DB ─────────────────────────────────────────────
-echo "HariMart: Waiting for database..."
-RETRIES=15
-until psql "postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require" -c "SELECT 1" > /dev/null 2>&1; do
-    RETRIES=$((RETRIES - 1))
-    if [ "$RETRIES" -le 0 ]; then
-        echo "HariMart: WARNING — DB not ready after 30s"
-        # Try without SSL as fallback
-        echo "HariMart: Trying without sslmode=require..."
-        psql "postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}" -c "SELECT 1" 2>&1 || echo "HariMart: Fallback also failed"
-        break
-    fi
-    echo "HariMart: DB not ready, retrying in 2s... ($RETRIES left)"
-    sleep 2
-done
+echo "HariMart: Using DB_HOST=$DB_HOST SSLMODE=${SSLMODE:-prefer}"
 
 # ── Run migrations ──────────────────────────────────────────
 echo "HariMart: Running migrations..."
-PSQL_URI="postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require"
 
-psql "$PSQL_URI" -f db/migrations/001_initial_schema.sql 2>&1 || echo "Migration 001 done/skipped"
-psql "$PSQL_URI" -f db/migrations/002_admin_seed.sql 2>&1 || echo "Migration 002 done/skipped"
-psql "$PSQL_URI" -f db/migrations/003_add_category_image_wishlist.sql 2>&1 || echo "Migration 003 done/skipped"
-psql "$PSQL_URI" -f db/migrations/004_seed_products.sql 2>&1 || echo "Migration 004 done/skipped"
+PSQL_ARGS="-h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME"
+
+psql $PSQL_ARGS -f db/migrations/001_initial_schema.sql 2>&1 || echo "Migration 001 done/skipped"
+psql $PSQL_ARGS -f db/migrations/002_admin_seed.sql 2>&1 || echo "Migration 002 done/skipped"
+psql $PSQL_ARGS -f db/migrations/003_add_category_image_wishlist.sql 2>&1 || echo "Migration 003 done/skipped"
+psql $PSQL_ARGS -f db/migrations/004_seed_products.sql 2>&1 || echo "Migration 004 done/skipped"
 
 echo "HariMart: Migrations complete"
 
 # ── Build Drogon config ─────────────────────────────────────
-# Use libpq key=value connection string — this is the most
-# reliable format and Drogon passes it straight to libpq.
-CONN_STR="host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} password=${DB_PASS} sslmode=require"
+# Set PGSSLMODE for Drogon's libpq connections
+if [ -n "$SSLMODE" ]; then
+    export PGSSLMODE="$SSLMODE"
+fi
 
 cat > config.json <<ENDOFCONFIG
 {
@@ -120,8 +147,9 @@ cat > config.json <<ENDOFCONFIG
             "user": "${DB_USER}",
             "passwd": "${DB_PASS}",
             "is_fast": false,
-            "number_of_connections": 5,
-            "connection_string": "${CONN_STR}"
+            "number_of_connections": 3,
+            "connect_timeout": 10,
+            "client_encoding": "utf8"
         }
     ],
     "app": {
@@ -136,17 +164,9 @@ cat > config.json <<ENDOFCONFIG
 }
 ENDOFCONFIG
 
-echo "HariMart: Generated config.json:"
-echo "HariMart: ---"
-# Show config without passwords
-sed 's/"passwd":[^,]*/"passwd": "***"/g; s/"password":[^,]*/"password": "***"/g' config.json
-echo "HariMart: ---"
-
-# Final connectivity test right before launch
-echo "HariMart: Final DB test before launch..."
-psql "postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require" -c "SELECT 'DB_OK'" 2>&1 || echo "HariMart: FINAL DB TEST FAILED"
+echo "HariMart: Config written (host=$DB_HOST port=$DB_PORT db=$DB_NAME)"
 
 echo "HariMart: ============================================"
-echo "HariMart: Launching Drogon server on port ${PORT}..."
+echo "HariMart: Launching Drogon server on port ${PORT}"
 echo "HariMart: ============================================"
 exec ./HariMart

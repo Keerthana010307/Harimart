@@ -1289,8 +1289,12 @@ async function apiFetch(url, options = {}) {
     const method = (options.method || 'GET').toUpperCase();
     // Skip auth URLs to avoid infinite loops
     const isAuthUrl = url.includes('/auth/');
+    // 15-second timeout so the UI never hangs forever
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
     try {
-        const res = await fetch(fullUrl, options);
+        const res = await fetch(fullUrl, { ...options, signal: controller.signal });
+        clearTimeout(timer);
         let data;
         try { data = await res.json(); } catch(e) { data = null; }
         if (!res.ok) {
@@ -1315,7 +1319,7 @@ async function apiFetch(url, options = {}) {
 }
 
 function apiErrorMessage(result, fallback = 'An error occurred') {
-    if (result.networkError) return 'Cannot reach the server — make sure HariMart is running on port 8080';
+    if (result.networkError) return 'Cannot reach the server. It may be starting up — please wait a moment and try again.';
     if (result.status === 401) return result.data?.error?.message || 'Please log in to continue';
     if (result.status === 403) return result.data?.error?.message || 'You do not have permission for this action';
     if (result.status === 404) return result.data?.error?.message || 'Resource not found';
@@ -1339,7 +1343,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
     const msg = document.getElementById('loginMessage');
-    msg.textContent = 'Connecting...'; msg.className = 'message';
+    msg.textContent = 'Logging in...'; msg.className = 'message';
 
     const result = await apiFetch('/api/v1/auth/login', {
         method: 'POST',
