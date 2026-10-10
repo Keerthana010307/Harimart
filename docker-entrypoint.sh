@@ -49,9 +49,22 @@ fi
 echo "HariMart: DB_HOST=$DB_HOST DB_PORT=$DB_PORT DB_NAME=$DB_NAME DB_USER=$DB_USER"
 echo "HariMart: Starting on port $PORT"
 
+# Wait for DB to be ready (max 30 seconds)
+echo "HariMart: Waiting for database to be ready..."
+export PGPASSWORD="$DB_PASS"
+RETRIES=15
+until psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1" > /dev/null 2>&1; do
+    RETRIES=$((RETRIES - 1))
+    if [ "$RETRIES" -le 0 ]; then
+        echo "HariMart: WARNING — DB not ready after 30s, proceeding anyway..."
+        break
+    fi
+    echo "HariMart: DB not ready, retrying in 2s... ($RETRIES retries left)"
+    sleep 2
+done
+
 # Run migrations
 echo "HariMart: Running migrations..."
-export PGPASSWORD="$DB_PASS"
 
 psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
     -f db/migrations/001_initial_schema.sql 2>&1 || echo "Migration 001 done/skipped"
@@ -68,7 +81,7 @@ psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
 echo "HariMart: Migrations complete"
 
 # Write config.json
-cat > config.json << EOF
+cat > config.json <<EOF
 {
     "listeners": [
         {

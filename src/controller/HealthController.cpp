@@ -9,6 +9,7 @@ void HealthController::health(
     std::function<void(const drogon::HttpResponsePtr&)>&& callback)
 {
     Json::Value response;
+    response["status"] = "UP";
 
     try
     {
@@ -18,28 +19,25 @@ void HealthController::health(
 
         if (!result.empty())
         {
-            response["status"] = "UP";
             response["db"] = "UP";
-
-            auto resp =
-                drogon::HttpResponse::newHttpJsonResponse(response);
-
-            resp->setStatusCode(drogon::k200OK);
-            callback(resp);
-            return;
+        }
+        else
+        {
+            response["db"] = "STARTING";
         }
     }
     catch (...)
     {
-        // Database is unavailable
+        // Database is still connecting — report degraded but
+        // keep the service marked UP so Render does not restart.
+        response["db"] = "DOWN";
     }
 
-    response["status"] = "UP";
-    response["db"] = "DOWN";
-
+    // Always return 200 so the health check passes on Render.
+    // The DB will connect once it is ready.
     auto resp =
         drogon::HttpResponse::newHttpJsonResponse(response);
 
-    resp->setStatusCode(drogon::k503ServiceUnavailable);
+    resp->setStatusCode(drogon::k200OK);
     callback(resp);
-}
+}

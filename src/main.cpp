@@ -1,6 +1,8 @@
 #include <drogon/drogon.h>
 #include <iostream>
 #include <exception>
+#include <cstdlib>
+#include <string>
 
 int main()
 {
@@ -10,27 +12,29 @@ int main()
 
         drogon::app().loadConfigFile("config.json");
 
-        // CORS middleware - supports both same-origin and cross-origin
+        // Detect HTTPS (Render sets the RENDER env var)
+        bool isHttps = (std::getenv("RENDER") != nullptr)
+                     || (std::getenv("RENDER_EXTERNAL_URL") != nullptr);
+
+        if (isHttps)
+        {
+            std::cout << "HariMart: HTTPS mode detected (Render)"
+                      << std::endl;
+        }
+
+        // CORS + cookie security middleware
         drogon::app().registerPreSendingAdvice(
-            [](const drogon::HttpRequestPtr& req,
+            [isHttps](const drogon::HttpRequestPtr& req,
                const drogon::HttpResponsePtr& resp)
             {
                 auto origin = req->getHeader("Origin");
 
-                // Allow same-origin (Drogon serves frontend) and dev origins
-                if (origin.empty() ||
-                    origin == "http://127.0.0.1:8080" ||
-                    origin == "http://localhost:8080" ||
-                    origin == "http://127.0.0.1:5500" ||
-                    origin == "http://localhost:5500")
+                if (!origin.empty())
                 {
-                    if (!origin.empty())
-                    {
-                        resp->addHeader(
-                            "Access-Control-Allow-Origin",
-                            origin
-                        );
-                    }
+                    resp->addHeader(
+                        "Access-Control-Allow-Origin",
+                        origin
+                    );
                 }
 
                 resp->addHeader(
@@ -47,6 +51,21 @@ int main()
                     "Access-Control-Allow-Methods",
                     "GET, POST, PUT, DELETE, OPTIONS"
                 );
+
+                // On HTTPS (Render), ensure session cookies have
+                // the Secure flag so the browser accepts them.
+                if (isHttps)
+                {
+                    auto setCookie = resp->getHeader("Set-Cookie");
+                    if (!setCookie.empty()
+                        && setCookie.find("Secure") == std::string::npos)
+                    {
+                        resp->addHeader(
+                            "Set-Cookie",
+                            setCookie + "; Secure"
+                        );
+                    }
+                }
             });
 
         // Handle CORS preflight requests
@@ -92,7 +111,8 @@ int main()
                 return nullptr;
             });
 
-        std::cout << "HariMart: Config loaded, starting on port 8080" << std::endl;
+        std::cout << "HariMart: Config loaded, launching server..."
+                  << std::endl;
 
         drogon::app().run();
 

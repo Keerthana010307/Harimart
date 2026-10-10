@@ -10,9 +10,12 @@ services:
         fromDatabase:
           name: harimart-db
           property: connectionString
+      - key: RENDER
+        value: "true"
 
 databases:
   - name: harimart-db
     plan: free
     databaseName: harimart
     user: harimart
+
