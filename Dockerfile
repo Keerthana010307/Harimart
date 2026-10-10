@@ -63,6 +63,8 @@ RUN apt-get update && apt-get install -y \
     libc-ares2 \
     libhiredis0.14 \
     postgresql-client \
+    dnsutils \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -74,7 +76,7 @@ COPY --from=builder /usr/local/lib/libdrogon* /usr/local/lib/
 COPY --from=builder /usr/local/lib/libtrantor* /usr/local/lib/
 RUN ldconfig
 
-ENV ENTRYPOINT_VERSION=4
+ENV ENTRYPOINT_VERSION=5
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 

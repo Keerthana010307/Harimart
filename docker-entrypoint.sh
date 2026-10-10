@@ -3,11 +3,13 @@ set -e
 
 PORT=${PORT:-8080}
 
-# Parse DATABASE_URL (Render sets this automatically)
-# Handles both: postgresql://user:pass@host/db
-#           and: postgresql://user:pass@host:5432/db
+echo "HariMart: ============================================"
+echo "HariMart: Starting HariMart Server"
+echo "HariMart: ============================================"
+
+# ── Parse DATABASE_URL ──────────────────────────────────────
 if [ -n "$DATABASE_URL" ]; then
-    echo "HariMart: DATABASE_URL is set, parsing..."
+    echo "HariMart: DATABASE_URL is set (length=${#DATABASE_URL})"
 
     # Strip protocol
     DB_REST="${DATABASE_URL#postgresql://}"
@@ -26,7 +28,7 @@ if [ -n "$DATABASE_URL" ]; then
     DB_NAME="${DB_AFTER_AT#*/}"
     DB_NAME="${DB_NAME%%\?*}"
 
-    # check if port is present (contains a colon)
+    # check if port is present
     case "$DB_HOSTPART" in
         *:*)
             DB_HOST="${DB_HOSTPART%%:*}"
@@ -38,7 +40,7 @@ if [ -n "$DATABASE_URL" ]; then
             ;;
     esac
 else
-    echo "HariMart: No DATABASE_URL, using fallback env vars..."
+    echo "HariMart: WARNING — No DATABASE_URL set!"
     DB_HOST="${DB_HOST:-127.0.0.1}"
     DB_PORT="${DB_PORT:-5432}"
     DB_NAME="${DB_NAME:-harimart}"
@@ -46,56 +48,60 @@ else
     DB_PASS="${DB_PASS:-}"
 fi
 
-echo "HariMart: DB_HOST=$DB_HOST DB_PORT=$DB_PORT DB_NAME=$DB_NAME DB_USER=$DB_USER"
-echo "HariMart: Starting on port $PORT"
+echo "HariMart: Parsed DB config:"
+echo "HariMart:   HOST = $DB_HOST"
+echo "HariMart:   PORT = $DB_PORT"
+echo "HariMart:   NAME = $DB_NAME"
+echo "HariMart:   USER = $DB_USER"
+echo "HariMart:   App PORT = $PORT"
 
-# Wait for DB to be ready (max 30 seconds)
-echo "HariMart: Waiting for database to be ready..."
+# ── Set SSL + password for libpq ────────────────────────────
 export PGPASSWORD="$DB_PASS"
+export PGSSLMODE=require
+
+# ── Test raw TCP connectivity ───────────────────────────────
+echo "HariMart: Testing TCP connectivity to $DB_HOST:$DB_PORT ..."
+if command -v timeout > /dev/null 2>&1; then
+    timeout 5 sh -c "echo > /dev/tcp/$DB_HOST/$DB_PORT" 2>/dev/null && echo "HariMart: TCP OK" || echo "HariMart: TCP FAILED (may be normal)"
+fi
+
+# ── DNS lookup ──────────────────────────────────────────────
+echo "HariMart: Resolving $DB_HOST ..."
+getent hosts "$DB_HOST" 2>/dev/null || nslookup "$DB_HOST" 2>/dev/null || echo "HariMart: DNS lookup tool not available"
+
+# ── Wait for DB ─────────────────────────────────────────────
+echo "HariMart: Waiting for database..."
 RETRIES=15
-until psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1" > /dev/null 2>&1; do
+until psql "postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require" -c "SELECT 1" > /dev/null 2>&1; do
     RETRIES=$((RETRIES - 1))
     if [ "$RETRIES" -le 0 ]; then
-        echo "HariMart: WARNING — DB not ready after 30s, proceeding anyway..."
+        echo "HariMart: WARNING — DB not ready after 30s"
+        # Try without SSL as fallback
+        echo "HariMart: Trying without sslmode=require..."
+        psql "postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}" -c "SELECT 1" 2>&1 || echo "HariMart: Fallback also failed"
         break
     fi
-    echo "HariMart: DB not ready, retrying in 2s... ($RETRIES retries left)"
+    echo "HariMart: DB not ready, retrying in 2s... ($RETRIES left)"
     sleep 2
 done
 
-# Run migrations
+# ── Run migrations ──────────────────────────────────────────
 echo "HariMart: Running migrations..."
+PSQL_URI="postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require"
 
-psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-    -f db/migrations/001_initial_schema.sql 2>&1 || echo "Migration 001 done/skipped"
-
-psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-    -f db/migrations/002_admin_seed.sql 2>&1 || echo "Migration 002 done/skipped"
-
-psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-    -f db/migrations/003_add_category_image_wishlist.sql 2>&1 || echo "Migration 003 done/skipped"
-
-psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
-    -f db/migrations/004_seed_products.sql 2>&1 || echo "Migration 004 done/skipped"
+psql "$PSQL_URI" -f db/migrations/001_initial_schema.sql 2>&1 || echo "Migration 001 done/skipped"
+psql "$PSQL_URI" -f db/migrations/002_admin_seed.sql 2>&1 || echo "Migration 002 done/skipped"
+psql "$PSQL_URI" -f db/migrations/003_add_category_image_wishlist.sql 2>&1 || echo "Migration 003 done/skipped"
+psql "$PSQL_URI" -f db/migrations/004_seed_products.sql 2>&1 || echo "Migration 004 done/skipped"
 
 echo "HariMart: Migrations complete"
 
-# Render PostgreSQL requires SSL.  The psql client auto-negotiates
-# SSL, but Drogon uses libpq internally and libpq defaults to
-# "prefer" which can fail when the server mandates SSL.  Setting
-# PGSSLMODE=require ensures libpq always uses SSL.
-export PGSSLMODE=require
-
-# Build a libpq-format connection string for Drogon.
-# This is more reliable than separate host/port/dbname fields
-# because it carries sslmode with it.
+# ── Build Drogon config ─────────────────────────────────────
+# Use libpq key=value connection string — this is the most
+# reliable format and Drogon passes it straight to libpq.
 CONN_STR="host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} password=${DB_PASS} sslmode=require"
 
-echo "HariMart: Connection string built (password hidden)"
-echo "HariMart: host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} sslmode=require"
-
-# Write config.json
-cat > config.json <<EOF
+cat > config.json <<ENDOFCONFIG
 {
     "listeners": [
         {
@@ -128,11 +134,19 @@ cat > config.json <<EOF
         "session_max_age": 3600
     }
 }
-EOF
+ENDOFCONFIG
 
-echo "HariMart: Config written:"
-cat config.json | grep -v passwd | grep -v password
+echo "HariMart: Generated config.json:"
+echo "HariMart: ---"
+# Show config without passwords
+sed 's/"passwd":[^,]*/"passwd": "***"/g; s/"password":[^,]*/"password": "***"/g' config.json
+echo "HariMart: ---"
 
-echo "HariMart: Launching server..."
+# Final connectivity test right before launch
+echo "HariMart: Final DB test before launch..."
+psql "postgresql://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=require" -c "SELECT 'DB_OK'" 2>&1 || echo "HariMart: FINAL DB TEST FAILED"
+
+echo "HariMart: ============================================"
+echo "HariMart: Launching Drogon server on port ${PORT}..."
+echo "HariMart: ============================================"
 exec ./HariMart
-
