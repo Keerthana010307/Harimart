@@ -62,6 +62,7 @@ RUN apt-get update && apt-get install -y \
     libuuid1 \
     libc-ares2 \
     libhiredis0.14 \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
