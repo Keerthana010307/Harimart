@@ -80,6 +80,20 @@ psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
 
 echo "HariMart: Migrations complete"
 
+# Render PostgreSQL requires SSL.  The psql client auto-negotiates
+# SSL, but Drogon uses libpq internally and libpq defaults to
+# "prefer" which can fail when the server mandates SSL.  Setting
+# PGSSLMODE=require ensures libpq always uses SSL.
+export PGSSLMODE=require
+
+# Build a libpq-format connection string for Drogon.
+# This is more reliable than separate host/port/dbname fields
+# because it carries sslmode with it.
+CONN_STR="host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} password=${DB_PASS} sslmode=require"
+
+echo "HariMart: Connection string built (password hidden)"
+echo "HariMart: host=${DB_HOST} port=${DB_PORT} dbname=${DB_NAME} user=${DB_USER} sslmode=require"
+
 # Write config.json
 cat > config.json <<EOF
 {
@@ -100,7 +114,8 @@ cat > config.json <<EOF
             "user": "${DB_USER}",
             "passwd": "${DB_PASS}",
             "is_fast": false,
-            "number_of_connections": 5
+            "number_of_connections": 5,
+            "connection_string": "${CONN_STR}"
         }
     ],
     "app": {
@@ -115,5 +130,9 @@ cat > config.json <<EOF
 }
 EOF
 
-echo "HariMart: Config written. Launching..."
+echo "HariMart: Config written:"
+cat config.json | grep -v passwd | grep -v password
+
+echo "HariMart: Launching server..."
 exec ./HariMart
+
