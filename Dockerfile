@@ -74,6 +74,7 @@ COPY --from=builder /usr/local/lib/libdrogon* /usr/local/lib/
 COPY --from=builder /usr/local/lib/libtrantor* /usr/local/lib/
 RUN ldconfig
 
+ENV ENTRYPOINT_VERSION=2
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 
